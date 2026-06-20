@@ -85,6 +85,10 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
 .checkbox-row{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0;}
 .checkbox-row label{display:flex;align-items:center;gap:6px;font-size:13px;width:auto;color:var(--on-surface-v);}
 .checkbox-row input[type=checkbox]{width:auto;}
+.listing-active{color:var(--secondary);background:rgba(78,222,163,.15);}
+.listing-inactive{color:var(--on-surface-v);background:var(--surface-ch);}
+.listing-outofstock{color:var(--tertiary);background:rgba(255,185,95,.15);}
+.listing-suspended{color:var(--error);background:rgba(255,180,171,.15);}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr);}.row{flex-direction:column;}.sidebar{display:none;}}
 </style>
 </head>
@@ -139,6 +143,10 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
       <div id="productList"></div>
       <h2>📦 Inventory Forecast & Reorder Recommendations</h2>
       <table><thead><tr><th>Product</th><th>Marketplace</th><th>Stock</th><th>Daily Velocity</th><th>Days of Stock Left</th><th>Recommendation</th></tr></thead><tbody id="forecastBody"></tbody></table>
+      <h2>🟢 Product Listing Status</h2>
+      <p class="hint">Live (Active) vs Inactive/Suspended/Out of Stock listings — filtered by the marketplace selected above.</p>
+      <div class="grid" id="listingKpis" style="margin-bottom:14px;"></div>
+      <table><thead><tr><th>Product</th><th>SKU</th><th>Marketplace</th><th>Status</th></tr></thead><tbody id="listingBody"></tbody></table>
     </div>
 
     <div class="tab-content" id="reports">
@@ -235,7 +243,9 @@ function genProducts(){
       i++;
       const price = 30+Math.floor(rand()*450);
       const cost = price*(0.4+rand()*0.3);
-      products.push({sku:'SKU-'+(1000+i), name, marketplace:mp, stock:Math.floor(rand()*120), reorder:15+Math.floor(rand()*10), price, cost, unitsSold30d:Math.floor(rand()*300), rating:(3.2+rand()*1.8)});
+      const r = rand();
+      const listingStatus = r<0.72 ? 'Active' : r<0.85 ? 'Inactive' : r<0.93 ? 'Out of Stock' : 'Suspended';
+      products.push({sku:'SKU-'+(1000+i), name, marketplace:mp, stock:Math.floor(rand()*120), reorder:15+Math.floor(rand()*10), price, cost, unitsSold30d:Math.floor(rand()*300), rating:(3.2+rand()*1.8), listingStatus});
     });
   });
   return products;
@@ -292,6 +302,16 @@ const INVOICES = genInvoices();
 // liveOrders[marketplace] = array of real orders once successfully fetched, else null (falls back to mock)
 const liveOrders = {amazon:null, noon:null, trendyol:null};
 const liveError = {amazon:null, noon:null, trendyol:null};
+const liveProducts = {amazon:null, noon:null, trendyol:null}; // real catalog/listing data once fetched (currently Trendyol only)
+
+function getCombinedProducts(){
+  let all = [];
+  MARKETS.forEach(m=>{
+    if(liveProducts[m]) all = all.concat(liveProducts[m]);
+    else all = all.concat(PRODUCTS.filter(p=>p.marketplace===m));
+  });
+  return all;
+}
 
 // ---------- Per-tab filters (marketplace + date range), each tab independent ----------
 function defaultFilter(){
@@ -403,7 +423,18 @@ async function fetchLiveAmazonOrders(creds){ return callBackend('/api/amazon-ord
 async function fetchLiveTrendyolOrders(creds){ return callBackend('/api/trendyol-orders', creds); }
 async function fetchLiveNoonOrders(creds){ return callBackend('/api/noon-orders', creds); }
 
+// Live product/listing fetchers — currently only Trendyol is wired (self-serve API).
+// Amazon/Noon product catalogs require additional scopes from your account manager.
+async function callBackendProducts(path, creds){
+  const resp = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(creds) });
+  const data = await resp.json();
+  if(!resp.ok) throw new Error(data.error + (data.detail ? ' — ' + data.detail : ''));
+  return data.products;
+}
+async function fetchLiveTrendyolProducts(creds){ return callBackendProducts('/api/trendyol-products', creds); }
+
 const LIVE_FETCHERS = {amazon:fetchLiveAmazonOrders, noon:fetchLiveNoonOrders, trendyol:fetchLiveTrendyolOrders};
+const LIVE_PRODUCT_FETCHERS = {trendyol:fetchLiveTrendyolProducts}; // amazon/noon not wired yet — needs extra API scopes
 
 // Called immediately after a marketplace is marked Connected — fetches real
 // data right away and re-renders every tab so it shows up instantly.
@@ -414,11 +445,20 @@ async function connectAndSync(m, creds){
     liveOrders[m] = orders;
   }catch(e){
     liveOrders[m] = null; // fall back to mock for this marketplace
-    liveError[m] = e.message + ' — likely blocked by CORS; browser-only apps usually need a backend proxy for this marketplace.';
+    liveError[m] = e.message;
     console.error(m, e);
+  }
+  if(LIVE_PRODUCT_FETCHERS[m]){
+    try{
+      liveProducts[m] = await LIVE_PRODUCT_FETCHERS[m](creds);
+    }catch(e){
+      liveProducts[m] = null;
+      console.error(m, 'products', e);
+    }
   }
   safe(renderDashboard,'dashboard');
   safe(renderMarketplace,'marketplace');
+  safe(renderInventory,'inventory');
   safe(renderReports,'reports');
   safe(renderIntegrations,'integrations');
 }
@@ -442,7 +482,7 @@ function renderDashboard(){
   document.getElementById('kpiRevenue').textContent = currency(totalRevenue);
   document.getElementById('kpiOrders').textContent = totalOrders.toLocaleString();
   document.getElementById('kpiAov').textContent = currency(totalRevenue/totalOrders);
-  document.getElementById('kpiLowStock').textContent = filterProducts(PRODUCTS, f).filter(p=>p.stock<=p.reorder).length;
+  document.getElementById('kpiLowStock').textContent = filterProducts(getCombinedProducts(), f).filter(p=>typeof p.stock==='number' && p.stock<=p.reorder).length;
 
   const byDay = {};
   SALES.forEach(s=>{ const k = s.date.toISOString().slice(0,10); byDay[k]=(byDay[k]||0)+s.revenue; });
@@ -500,22 +540,27 @@ function renderMarketplace(){
 let lowStockOnly = false, searchTerm = '';
 function renderInventory(){
   renderFilterBar('inventory', ()=>safe(renderInventory,'inventory'));
-  let list = filterProducts(PRODUCTS, filters.inventory);
+  let list = filterProducts(getCombinedProducts(), filters.inventory);
   if(searchTerm) list = list.filter(p=>p.name.toLowerCase().includes(searchTerm)||p.sku.toLowerCase().includes(searchTerm));
-  if(lowStockOnly) list = list.filter(p=>p.stock<=p.reorder);
+  if(lowStockOnly) list = list.filter(p=>typeof p.stock==='number' && p.stock<=p.reorder);
   document.getElementById('productList').innerHTML = list.map(p=>{
-    const margin = ((p.price-p.cost)/p.price*100).toFixed(0);
-    const low = p.stock<=p.reorder;
+    const margin = p.price? ((p.price-p.cost)/p.price*100).toFixed(0) : '—';
+    const hasStock = typeof p.stock === 'number';
+    const low = hasStock && p.stock<=p.reorder;
+    const rightLine = hasStock ? `Stock: ${p.stock}` : (p.isLiveListing ? `Sold (30d): ${p.unitsSold30d} — stock count unavailable via Trendyol API` : 'Stock: —');
     return `<div class="product-row">
       <div><b>${p.name}</b><div class="kpi-label">${p.sku} · ${MP_LABEL[p.marketplace]} · margin ${margin}%</div></div>
-      <div style="text-align:right"><div>${currency(p.price)}</div><div class="${low?'low':'kpi-label'}">Stock: ${p.stock}</div></div>
+      <div style="text-align:right"><div>${currency(p.price)}</div><div class="${low?'low':'kpi-label'}" style="font-size:11px;">${rightLine}</div></div>
     </div>`;
   }).join('');
+  if(list.some(p=>p.isLiveListing && typeof p.stock!=='number')){
+    document.getElementById('productList').innerHTML += `<p class="hint">ℹ️ Live Trendyol listings show real name/price/status, but stock count and units-sold need a separate stock-sync API call — not yet wired.</p>`;
+  }
 
   // ---- Inventory Forecast: daily sell-through velocity -> days of stock left -> reorder recommendation ----
   const LEAD_TIME_DAYS = 14; // assumed restock lead time
   const TARGET_DAYS_COVER = 30; // target stock buffer
-  const forecastRows = filterProducts(PRODUCTS, filters.inventory).map(p=>{
+  const forecastRows = filterProducts(getCombinedProducts(), filters.inventory).filter(p=>typeof p.stock==='number').map(p=>{
     const velocity = p.unitsSold30d / 30;
     const daysLeft = velocity > 0 ? (p.stock / velocity) : Infinity;
     let recommendation, recClass;
@@ -539,6 +584,23 @@ function renderInventory(){
     <td>${r.velocity.toFixed(1)}/day</td>
     <td>${r.daysLeft===Infinity?'—':Math.floor(r.daysLeft)+' days'}</td>
     <td class="${r.recClass}">${r.recommendation}</td></tr>`
+  ).join('') + (forecastRows.length===0 ? `<tr><td colspan="6" class="hint">No products with known stock data in this selection.</td></tr>` : '');
+
+  // ---- Product Listing Status (live/inactive/suspended/out of stock per marketplace) ----
+  const listingProducts = filterProducts(getCombinedProducts(), filters.inventory);
+  const statusCounts = {Active:0, Inactive:0, 'Out of Stock':0, Suspended:0};
+  listingProducts.forEach(p=>{ statusCounts[p.listingStatus] = (statusCounts[p.listingStatus]||0)+1; });
+  document.getElementById('listingKpis').innerHTML = `
+    <div class="card"><div class="kpi-value" style="color:var(--secondary)">${statusCounts.Active}</div><div class="kpi-label">Active / Live</div></div>
+    <div class="card"><div class="kpi-value">${statusCounts.Inactive}</div><div class="kpi-label">Inactive</div></div>
+    <div class="card"><div class="kpi-value" style="color:var(--tertiary)">${statusCounts['Out of Stock']}</div><div class="kpi-label">Out of Stock</div></div>
+    <div class="card"><div class="kpi-value" style="color:var(--error)">${statusCounts.Suspended}</div><div class="kpi-label">Suspended</div></div>`;
+
+  const statusClass = s => s==='Active'?'listing-active':s==='Inactive'?'listing-inactive':s==='Out of Stock'?'listing-outofstock':'listing-suspended';
+  document.getElementById('listingBody').innerHTML = listingProducts.map(p=>`
+    <tr><td>${p.name}</td><td>${p.sku}</td>
+    <td><span class="badge" style="background:${MP_COLOR[p.marketplace]}"></span>${MP_LABEL[p.marketplace]}</td>
+    <td><span class="status ${statusClass(p.listingStatus)}">${p.listingStatus}</span></td></tr>`
   ).join('');
 }
 
@@ -548,7 +610,7 @@ function renderReports(){
   const f = filters.reports;
   const SALES = filterOrdersAsSales(getCombinedSales(), f);
   const ORDERS = filterOrders(getCombinedOrders(), f);
-  const FPRODUCTS = filterProducts(PRODUCTS, f);
+  const FPRODUCTS = filterProducts(getCombinedProducts(), f);
   const totalRevenue = SALES.reduce((s,p)=>s+p.revenue,0);
   const totalCost = FPRODUCTS.reduce((s,p)=>s+p.cost*p.unitsSold30d,0);
   const profit = totalRevenue-totalCost;
