@@ -132,10 +132,13 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
     <div class="tab-content" id="inventory">
       <h1>Inventory Hub</h1>
       <div id="filterBar-inventory"></div>
+      <p class="hint">Stock levels are a live snapshot — the date range above affects sales velocity used for forecasts below, not current stock counts.</p>
       <div class="field"><input id="searchBox" placeholder="Search SKU or product name"></div>
       <div class="chip" id="lowStockChip">Low stock only</div>
       <div style="height:14px;"></div>
       <div id="productList"></div>
+      <h2>📦 Inventory Forecast & Reorder Recommendations</h2>
+      <table><thead><tr><th>Product</th><th>Marketplace</th><th>Stock</th><th>Daily Velocity</th><th>Days of Stock Left</th><th>Recommendation</th></tr></thead><tbody id="forecastBody"></tbody></table>
     </div>
 
     <div class="tab-content" id="reports">
@@ -146,6 +149,10 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
       <div class="card chart-card"><canvas id="topProductsChart"></canvas></div>
       <h2>Profitability Summary</h2>
       <div class="card" id="profitSummary"></div>
+      <h2>📈 Sales Forecast (next 14 days)</h2>
+      <p class="hint">Projected using a linear trend fitted to the selected date range's daily revenue. Indicative only — actual results depend on promotions, seasonality, and stock availability.</p>
+      <div class="card chart-card"><canvas id="forecastChart"></canvas></div>
+      <div class="card" id="forecastSummary" style="margin-top:14px;"></div>
     </div>
 
     <div class="tab-content" id="advertising">
@@ -251,18 +258,24 @@ const PRODUCTS = genProducts();
 const MOCK_ORDERS = genOrders(150);
 const currency = n => 'SAR ' + Math.round(n).toLocaleString('en-US');
 
-function genAdCampaigns(){
+function genAdDaily(days=60){
+  // Daily ad spend/sales per marketplace per campaign-type, so date range filtering actually changes results
   const names = ['Brand Awareness', 'Sponsored Products', 'Retargeting', 'New Launch Boost', 'Holiday Push'];
-  const campaigns = [];
+  const now = new Date();
+  const rows = [];
   MARKETS.forEach(mp=>{
     names.forEach(name=>{
       if(rand()<0.3) return;
-      const spend = 200+Math.floor(rand()*1800);
-      const sales = spend*(1.5+rand()*3);
-      campaigns.push({name, marketplace:mp, spend, sales, acos:(spend/sales*100), roas:(sales/spend)});
+      for(let i=days;i>=0;i--){
+        if(rand()<0.55) continue; // not every campaign spends every day
+        const date = new Date(now); date.setDate(now.getDate()-i); date.setHours(0,0,0,0);
+        const spend = 20+Math.floor(rand()*180);
+        const sales = spend*(1.5+rand()*3);
+        rows.push({name, marketplace:mp, date, spend, sales});
+      }
     });
   });
-  return campaigns;
+  return rows;
 }
 function genInvoices(){
   const statuses=['Paid','Pending','Processing','Overdue'];
@@ -273,7 +286,7 @@ function genInvoices(){
     return {id:'INV-'+(8000+i), marketplace:mp, date:d, amount:300+Math.floor(rand()*4000), status:statuses[Math.floor(rand()*statuses.length)]};
   }).sort((a,b)=>b.date-a.date);
 }
-const AD_CAMPAIGNS = genAdCampaigns();
+const AD_DAILY = genAdDaily(60);
 const INVOICES = genInvoices();
 
 // liveOrders[marketplace] = array of real orders once successfully fetched, else null (falls back to mock)
@@ -336,6 +349,18 @@ function filterProducts(products, f){
   return products.filter(p=>p.marketplace===f.marketplace);
 }
 
+// Simple linear regression (least squares) over [{x,y}] points -> {slope, intercept}
+function linearRegression(points){
+  const n = points.length;
+  if(n < 2) return {slope:0, intercept: n? points[0].y : 0};
+  let sumX=0,sumY=0,sumXY=0,sumXX=0;
+  points.forEach(p=>{ sumX+=p.x; sumY+=p.y; sumXY+=p.x*p.y; sumXX+=p.x*p.x; });
+  const denom = (n*sumXX - sumX*sumX);
+  const slope = denom===0 ? 0 : (n*sumXY - sumX*sumY)/denom;
+  const intercept = (sumY - slope*sumX)/n;
+  return {slope, intercept};
+}
+
 function getCombinedOrders(){
   let all = [];
   MARKETS.forEach(m=>{
@@ -346,7 +371,9 @@ function getCombinedOrders(){
 }
 
 function getCombinedSales(){
-  // Derive daily sales points per marketplace from combined orders (so live data flows into charts/KPIs immediately)
+  // Single source of truth: derive daily sales points directly from combined
+  // orders (live where connected, mock otherwise) — no separate mock trend
+  // blended in, which previously double-counted revenue for mock marketplaces.
   const orders = getCombinedOrders();
   const byKey = {};
   orders.forEach(o=>{
@@ -355,12 +382,7 @@ function getCombinedSales(){
     byKey[k].revenue += o.total;
     byKey[k].orders += 1;
   });
-  let points = Object.values(byKey);
-  // For marketplaces still on mock, blend in the smoother 30-day mock trend so the chart isn't sparse
-  MARKETS.forEach(m=>{
-    if(!liveOrders[m]) points = points.concat(MOCK_SALES.filter(s=>s.marketplace===m));
-  });
-  return points;
+  return Object.values(byKey);
 }
 
 // ---------- LIVE API STUBS (fill in once you have real keys) ----------
@@ -489,6 +511,35 @@ function renderInventory(){
       <div style="text-align:right"><div>${currency(p.price)}</div><div class="${low?'low':'kpi-label'}">Stock: ${p.stock}</div></div>
     </div>`;
   }).join('');
+
+  // ---- Inventory Forecast: daily sell-through velocity -> days of stock left -> reorder recommendation ----
+  const LEAD_TIME_DAYS = 14; // assumed restock lead time
+  const TARGET_DAYS_COVER = 30; // target stock buffer
+  const forecastRows = filterProducts(PRODUCTS, filters.inventory).map(p=>{
+    const velocity = p.unitsSold30d / 30;
+    const daysLeft = velocity > 0 ? (p.stock / velocity) : Infinity;
+    let recommendation, recClass;
+    if(velocity === 0){
+      recommendation = 'No recent sales — monitor'; recClass = 'kpi-label';
+    } else if(daysLeft <= LEAD_TIME_DAYS){
+      const reorderQty = Math.ceil(velocity*TARGET_DAYS_COVER - p.stock);
+      recommendation = `Reorder ~${reorderQty} units now`; recClass = 'low';
+    } else if(daysLeft <= TARGET_DAYS_COVER){
+      recommendation = 'Reorder soon'; recClass = 'kpi-label';
+    } else {
+      recommendation = 'Stock healthy'; recClass = 'kpi-label';
+    }
+    return {p, velocity, daysLeft, recommendation, recClass};
+  }).sort((a,b)=>a.daysLeft-b.daysLeft);
+
+  document.getElementById('forecastBody').innerHTML = forecastRows.map(r=>`
+    <tr><td>${r.p.name}</td>
+    <td><span class="badge" style="background:${MP_COLOR[r.p.marketplace]}"></span>${MP_LABEL[r.p.marketplace]}</td>
+    <td>${r.p.stock}</td>
+    <td>${r.velocity.toFixed(1)}/day</td>
+    <td>${r.daysLeft===Infinity?'—':Math.floor(r.daysLeft)+' days'}</td>
+    <td class="${r.recClass}">${r.recommendation}</td></tr>`
+  ).join('');
 }
 
 // ---------- Render: Reports ----------
@@ -530,16 +581,59 @@ function renderReports(){
     <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Returned Orders</span><b>${returned}</b></div>
     <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Cancelled Orders</span><b>${cancelled}</b></div>
   `;
+
+  // ---- Sales Forecast: linear trend fit on the filtered range's daily revenue, projected 14 days forward ----
+  const byDay = {};
+  SALES.forEach(s=>{ const k = s.date.toISOString().slice(0,10); byDay[k] = (byDay[k]||0) + s.revenue; });
+  const sortedDays = Object.keys(byDay).sort();
+  const points = sortedDays.map((k,i)=>({x:i, y:byDay[k]}));
+  const {slope, intercept} = linearRegression(points);
+
+  const historyLabels = sortedDays.map(d=>new Date(d).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));
+  const historyData = sortedDays.map((k)=>byDay[k]);
+  const forecastDays = 14;
+  const forecastLabels = []; const forecastData = [];
+  for(let i=1;i<=forecastDays;i++){
+    const x = points.length - 1 + i;
+    const d = new Date(sortedDays[sortedDays.length-1] || new Date());
+    d.setDate(d.getDate()+i);
+    forecastLabels.push(d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}));
+    forecastData.push(Math.max(0, slope*x + intercept));
+  }
+  const allLabels = historyLabels.concat(forecastLabels);
+  const historySeries = historyData.concat(Array(forecastDays).fill(null));
+  const forecastSeries = Array(Math.max(historyData.length-1,0)).fill(null).concat([historyData[historyData.length-1] ?? 0]).concat(forecastData);
+
+  makeChart('forecastChart', {
+    type:'line',
+    data:{ labels: allLabels, datasets:[
+      {label:'Actual', data:historySeries, borderColor:'#b3c5ff', backgroundColor:'rgba(179,197,255,.1)', tension:.3, pointRadius:0, fill:true},
+      {label:'Forecast', data:forecastSeries, borderColor:'#4edea3', borderDash:[6,4], tension:.3, pointRadius:0, fill:false},
+    ]},
+    options:{plugins:{legend:{labels:{color:'#c2c6d8'}}}, scales:{x:{ticks:{color:'#c2c6d8',maxTicksLimit:8}},y:{display:false}}}
+  });
+
+  const projectedTotal = forecastData.reduce((s,v)=>s+v,0);
+  const trendDirection = slope>0 ? 'upward 📈' : slope<0 ? 'downward 📉' : 'flat ➡️';
+  document.getElementById('forecastSummary').innerHTML = `
+    <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Projected Revenue (next 14 days)</span><b>${currency(projectedTotal)}</b></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Trend Direction</span><b>${trendDirection}</b></div>
+    <div class="hint" style="margin-top:8px;">Based on ${sortedDays.length} day(s) of data in the selected range. More history = more reliable forecast.</div>
+  `;
 }
 
 // ---------- Render: Advertising ----------
 function renderAdvertising(){
   renderFilterBar('advertising', ()=>safe(renderAdvertising,'advertising'));
   const f = filters.advertising;
-  const campaigns = f.marketplace==='all' ? AD_CAMPAIGNS : AD_CAMPAIGNS.filter(c=>c.marketplace===f.marketplace);
+  const start = new Date(f.start); const end = new Date(f.end); end.setHours(23,59,59,999);
+  const rows = AD_DAILY.filter(r=>{
+    if(f.marketplace!=='all' && r.marketplace!==f.marketplace) return false;
+    return r.date >= start && r.date <= end;
+  });
 
-  const totalSpend = campaigns.reduce((s,c)=>s+c.spend,0);
-  const totalSales = campaigns.reduce((s,c)=>s+c.sales,0);
+  const totalSpend = rows.reduce((s,r)=>s+r.spend,0);
+  const totalSales = rows.reduce((s,r)=>s+r.sales,0);
   const avgAcos = totalSales? (totalSpend/totalSales*100) : 0;
   const avgRoas = totalSpend? (totalSales/totalSpend) : 0;
 
@@ -550,7 +644,7 @@ function renderAdvertising(){
     <div class="card"><div class="kpi-value">${avgRoas.toFixed(2)}x</div><div class="kpi-label">ROAS (Return on Ad Spend)</div></div>`;
 
   const byMp = {}; MARKETS.forEach(m=>byMp[m]={spend:0,sales:0});
-  campaigns.forEach(c=>{ byMp[c.marketplace].spend+=c.spend; byMp[c.marketplace].sales+=c.sales; });
+  rows.forEach(r=>{ byMp[r.marketplace].spend+=r.spend; byMp[r.marketplace].sales+=r.sales; });
   makeChart('adChart', {
     type:'bar',
     data:{ labels: MARKETS.map(m=>MP_LABEL[m]),
@@ -561,10 +655,20 @@ function renderAdvertising(){
     options:{plugins:{legend:{labels:{color:'#c2c6d8'}}}, scales:{x:{ticks:{color:'#c2c6d8'}},y:{display:false}}}
   });
 
-  document.getElementById('adCampaignsBody').innerHTML = campaigns.map(c=>`
-    <tr><td>${c.name}</td><td><span class="badge" style="background:${MP_COLOR[c.marketplace]}"></span>${MP_LABEL[c.marketplace]}</td>
-    <td>${currency(c.spend)}</td><td>${currency(c.sales)}</td><td>${c.acos.toFixed(1)}%</td><td>${c.roas.toFixed(2)}x</td></tr>`
-  ).join('');
+  // Aggregate by campaign name + marketplace for the table
+  const byCampaign = {};
+  rows.forEach(r=>{
+    const k = r.name+'_'+r.marketplace;
+    if(!byCampaign[k]) byCampaign[k] = {name:r.name, marketplace:r.marketplace, spend:0, sales:0};
+    byCampaign[k].spend += r.spend; byCampaign[k].sales += r.sales;
+  });
+  const campaigns = Object.values(byCampaign);
+  document.getElementById('adCampaignsBody').innerHTML = campaigns.length ? campaigns.map(c=>{
+    const acos = c.sales? (c.spend/c.sales*100) : 0;
+    const roas = c.spend? (c.sales/c.spend) : 0;
+    return `<tr><td>${c.name}</td><td><span class="badge" style="background:${MP_COLOR[c.marketplace]}"></span>${MP_LABEL[c.marketplace]}</td>
+    <td>${currency(c.spend)}</td><td>${currency(c.sales)}</td><td>${acos.toFixed(1)}%</td><td>${roas.toFixed(2)}x</td></tr>`;
+  }).join('') : `<tr><td colspan="6" class="hint">No campaigns ran in this date range.</td></tr>`;
 }
 
 // ---------- Render: Finances ----------
@@ -572,18 +676,18 @@ function renderFinances(){
   renderFilterBar('finances', ()=>safe(renderFinances,'finances'));
   const f = filters.finances;
   const invoices = filterOrders(INVOICES.map(i=>({...i})), f); // reuse date+marketplace filter (shape-compatible: has .date, .marketplace)
-  const FPRODUCTS = filterProducts(PRODUCTS, f);
+  const rangeOrders = filterOrders(getCombinedOrders(), f); // actual orders within selected range — used for stock-value-sold instead of a fixed 30d figure
 
   const paid = invoices.filter(i=>i.status==='Paid').reduce((s,i)=>s+i.amount,0);
   const pending = invoices.filter(i=>i.status==='Pending'||i.status==='Processing').reduce((s,i)=>s+i.amount,0);
   const overdue = invoices.filter(i=>i.status==='Overdue').reduce((s,i)=>s+i.amount,0);
-  const stockValueSold = FPRODUCTS.reduce((s,p)=>s+p.price*p.unitsSold30d,0);
+  const stockValueSold = rangeOrders.reduce((s,o)=>s+o.total,0);
 
   document.getElementById('financeKpis').innerHTML = `
     <div class="card"><div class="kpi-value">${currency(paid)}</div><div class="kpi-label">Payments Released</div></div>
     <div class="card"><div class="kpi-value">${currency(pending)}</div><div class="kpi-label">Pending Payouts</div></div>
     <div class="card"><div class="kpi-value">${currency(overdue)}</div><div class="kpi-label">Overdue</div></div>
-    <div class="card"><div class="kpi-value">${currency(stockValueSold)}</div><div class="kpi-label">Stock Value Sold (30d)</div></div>`;
+    <div class="card"><div class="kpi-value">${currency(stockValueSold)}</div><div class="kpi-label">Stock Value Sold (in range)</div></div>`;
 
   document.getElementById('invoicesBody').innerHTML = invoices.map(i=>`
     <tr><td>${i.id}</td><td><span class="badge" style="background:${MP_COLOR[i.marketplace]}"></span>${MP_LABEL[i.marketplace]}</td>
