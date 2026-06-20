@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniSync — KSA Marketplace Analytics</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script>window.addEventListener('error', function(e){ console.error('Script error:', e.message); });</script>
+<style>
+:root{
+  --surface:#0b1326; --surface-c:#171f33; --surface-ch:#222a3d; --surface-cl:#131b2e;
+  --on-surface:#dae2fd; --on-surface-v:#c2c6d8; --outline:#424656;
+  --primary:#b3c5ff; --primary-c:#0066ff; --secondary:#4edea3; --tertiary:#ffb95f; --error:#ffb4ab;
+  --amazon:#ff9900; --noon:#feee00; --trendyol:#f27a1a;
+}
+*{box-sizing:border-box;}
+body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--surface);color:var(--on-surface);}
+.app{display:flex;min-height:100vh;}
+.sidebar{width:220px;background:var(--surface-cl);padding:20px 12px;flex-shrink:0;}
+.brand{font-weight:700;font-size:18px;padding:8px 12px 24px;}
+.brand span{color:var(--primary);}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:10px;cursor:pointer;color:var(--on-surface-v);font-size:14px;margin-bottom:4px;}
+.nav-item.active{background:rgba(179,197,255,0.15);color:var(--primary);font-weight:600;}
+.nav-item:hover{background:var(--surface-ch);}
+.main{flex:1;padding:24px 32px;max-width:1100px;}
+h1{font-size:22px;margin:0 0 20px;}
+h2{font-size:16px;margin:28px 0 12px;font-weight:600;}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.card{background:var(--surface-c);border-radius:16px;padding:18px;}
+.kpi-label{font-size:12px;color:var(--on-surface-v);margin-top:4px;}
+.kpi-value{font-size:22px;font-weight:700;}
+.kpi-delta{font-size:12px;font-weight:600;padding:3px 8px;border-radius:20px;float:right;}
+.up{color:var(--secondary);background:rgba(78,222,163,.15);}
+.down{color:var(--error);background:rgba(255,180,171,.15);}
+.row{display:flex;gap:14px;}
+.chart-card canvas{max-height:220px;}
+.chip{display:inline-flex;align-items:center;padding:6px 14px;border-radius:20px;border:1px solid var(--outline);margin-right:8px;cursor:pointer;font-size:13px;}
+.chip.active{background:rgba(179,197,255,.25);border-color:var(--primary);color:var(--primary);}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;color:var(--on-surface-v);font-weight:500;padding:8px;border-bottom:1px solid var(--outline);}
+td{padding:10px 8px;border-bottom:1px solid var(--surface-ch);}
+.badge{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;}
+.status{font-size:11px;padding:2px 8px;border-radius:10px;}
+.s-delivered{color:var(--secondary);background:rgba(78,222,163,.15);}
+.s-returned,.s-cancelled{color:var(--error);background:rgba(255,180,171,.15);}
+.s-pending{color:var(--tertiary);background:rgba(255,185,95,.15);}
+.s-shipped{color:var(--on-surface-v);background:var(--surface-ch);}
+input,select{background:var(--surface-ch);border:none;border-radius:10px;padding:10px 14px;color:var(--on-surface);width:100%;font-size:13px;}
+.field{margin-bottom:10px;}
+.field label{font-size:12px;color:var(--on-surface-v);display:block;margin-bottom:4px;}
+button{background:var(--primary-c);color:#fff;border:none;padding:10px 18px;border-radius:10px;cursor:pointer;font-weight:600;font-size:13px;}
+button.secondary{background:transparent;border:1px solid var(--outline);color:var(--on-surface);}
+.conn-card{background:var(--surface-c);border-radius:16px;padding:18px;margin-bottom:14px;}
+.conn-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.hint{font-size:11px;color:var(--on-surface-v);margin-bottom:12px;}
+.dot{width:10px;height:10px;border-radius:50%;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+.insight{background:var(--surface-ch);border-radius:12px;padding:12px 14px;margin-bottom:8px;font-size:13px;display:flex;gap:10px;align-items:flex-start;}
+.product-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface-c);border-radius:12px;padding:12px 16px;margin-bottom:8px;}
+.low{color:var(--error);font-weight:700;}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr);}.row{flex-direction:column;}.sidebar{display:none;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">Omni<span>Sync</span></div>
+    <div class="nav-item active" data-tab="dashboard">📊 Dashboard</div>
+    <div class="nav-item" data-tab="marketplace">🏬 Marketplaces</div>
+    <div class="nav-item" data-tab="inventory">📦 Inventory</div>
+    <div class="nav-item" data-tab="reports">📈 Reports</div>
+    <div class="nav-item" data-tab="integrations">🔌 Integrations</div>
+  </div>
+  <div class="main">
+
+    <div class="tab-content active" id="dashboard">
+      <h1>Executive Dashboard</h1>
+      <div class="grid">
+        <div class="card"><div class="kpi-delta up">+12.4%</div><div class="kpi-value" id="kpiRevenue">-</div><div class="kpi-label">Revenue (30d)</div></div>
+        <div class="card"><div class="kpi-delta up">+8.1%</div><div class="kpi-value" id="kpiOrders">-</div><div class="kpi-label">Orders (30d)</div></div>
+        <div class="card"><div class="kpi-delta up">+3.2%</div><div class="kpi-value" id="kpiAov">-</div><div class="kpi-label">Avg Order Value</div></div>
+        <div class="card"><div class="kpi-delta down">-5.0%</div><div class="kpi-value" id="kpiLowStock">-</div><div class="kpi-label">Low Stock Alerts</div></div>
+      </div>
+      <h2>Revenue Trend — All Marketplaces</h2>
+      <div class="card chart-card"><canvas id="revenueChart"></canvas></div>
+      <h2>Revenue Share by Marketplace</h2>
+      <div class="card chart-card" style="display:flex;align-items:center;gap:20px;">
+        <canvas id="shareChart" style="max-width:180px;"></canvas>
+        <div id="shareLegend" style="flex:1;font-size:13px;"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="marketplace">
+      <h1>Marketplace Command Center</h1>
+      <div id="mpChips" style="margin-bottom:18px;"></div>
+      <div id="mpCards"></div>
+      <h2>Recent Orders</h2>
+      <table><thead><tr><th>Order</th><th>Marketplace</th><th>City</th><th>Date</th><th>Total</th><th>Status</th></tr></thead><tbody id="ordersBody"></tbody></table>
+    </div>
+
+    <div class="tab-content" id="inventory">
+      <h1>Inventory Hub</h1>
+      <div class="field"><input id="searchBox" placeholder="Search SKU or product name"></div>
+      <div class="chip" id="lowStockChip">Low stock only</div>
+      <div style="height:14px;"></div>
+      <div id="productList"></div>
+    </div>
+
+    <div class="tab-content" id="reports">
+      <h1>Reports & Insights</h1>
+      <div id="insights"></div>
+      <h2>Top 5 Products by Revenue</h2>
+      <div class="card chart-card"><canvas id="topProductsChart"></canvas></div>
+      <h2>Profitability Summary</h2>
+      <div class="card" id="profitSummary"></div>
+    </div>
+
+    <div class="tab-content" id="integrations">
+      <h1>Integrations & Operations</h1>
+      <p class="hint">Keys are stored only in this browser (localStorage) for this demo build. For production, store server-side.</p>
+      <div id="connCards"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ---------- Mock data generation (swap for real API calls — see fetchLive* stubs below) ----------
+const MARKETS = ['amazon','noon','trendyol'];
+const MP_LABEL = {amazon:'Amazon.sa', noon:'Noon', trendyol:'Trendyol'};
+const MP_COLOR = {amazon:'#ff9900', noon:'#feee00', trendyol:'#f27a1a'};
+
+function seededRandom(seed){ let s = seed; return () => { s = (s*9301+49297)%233280; return s/233280; }; }
+const rand = seededRandom(42);
+
+function genSales(days=30){
+  const points = []; const now = new Date();
+  MARKETS.forEach(mp=>{
+    const base = mp==='amazon'?4200:mp==='noon'?3100:1800;
+    for(let i=days;i>=0;i--){
+      const d = new Date(now); d.setDate(now.getDate()-i);
+      const noise = (rand()-0.5)*base*0.4;
+      const weekend = (d.getDay()===5||d.getDay()===6)?1.25:1.0;
+      const revenue = Math.max(0,(base+noise)*weekend);
+      points.push({date:d, revenue, orders:Math.round(revenue/95), marketplace:mp});
+    }
+  });
+  return points;
+}
+
+function genProducts(){
+  const names=['Wireless Earbuds Pro','Smart Watch Series X','USB-C Fast Charger 65W','Arabic Coffee Maker','Abaya Premium Black','Oud Perfume 100ml','Kids Educational Tablet','Portable Blender','LED Desk Lamp','Yoga Mat Non-Slip','Bluetooth Speaker Mini','Stainless Steel Bottle'];
+  const products=[]; let i=0;
+  names.forEach(name=>{
+    MARKETS.forEach(mp=>{
+      if(rand()<0.4) return;
+      i++;
+      const price = 30+Math.floor(rand()*450);
+      const cost = price*(0.4+rand()*0.3);
+      products.push({sku:'SKU-'+(1000+i), name, marketplace:mp, stock:Math.floor(rand()*120), reorder:15+Math.floor(rand()*10), price, cost, unitsSold30d:Math.floor(rand()*300), rating:(3.2+rand()*1.8)});
+    });
+  });
+  return products;
+}
+
+function genOrders(limit=100){
+  const cities=['Riyadh','Jeddah','Dammam','Mecca','Medina','Khobar'];
+  const statuses=['Delivered','Shipped','Pending','Returned','Cancelled'];
+  const now=new Date(); const orders=[];
+  for(let i=0;i<limit;i++){
+    const mp = MARKETS[Math.floor(rand()*3)];
+    const d = new Date(now.getTime() - rand()*24*14*3600*1000);
+    orders.push({id:'ORD-'+(20000+i), marketplace:mp, date:d, total:50+Math.floor(rand()*900), status:statuses[Math.floor(rand()*statuses.length)], city:cities[Math.floor(rand()*cities.length)]});
+  }
+  return orders.sort((a,b)=>b.date-a.date);
+}
+
+const MOCK_SALES = genSales(30);
+const PRODUCTS = genProducts();
+const MOCK_ORDERS = genOrders(150);
+const currency = n => 'SAR ' + Math.round(n).toLocaleString('en-US');
+
+// liveOrders[marketplace] = array of real orders once successfully fetched, else null (falls back to mock)
+const liveOrders = {amazon:null, noon:null, trendyol:null};
+const liveError = {amazon:null, noon:null, trendyol:null};
+
+function getCombinedOrders(){
+  let all = [];
+  MARKETS.forEach(m=>{
+    if(liveOrders[m]) all = all.concat(liveOrders[m]);
+    else all = all.concat(MOCK_ORDERS.filter(o=>o.marketplace===m));
+  });
+  return all.sort((a,b)=>b.date-a.date);
+}
+
+function getCombinedSales(){
+  // Derive daily sales points per marketplace from combined orders (so live data flows into charts/KPIs immediately)
+  const orders = getCombinedOrders();
+  const byKey = {};
+  orders.forEach(o=>{
+    const k = o.date.toISOString().slice(0,10)+'_'+o.marketplace;
+    if(!byKey[k]) byKey[k] = {date:new Date(o.date.toISOString().slice(0,10)), marketplace:o.marketplace, revenue:0, orders:0};
+    byKey[k].revenue += o.total;
+    byKey[k].orders += 1;
+  });
+  let points = Object.values(byKey);
+  // For marketplaces still on mock, blend in the smoother 30-day mock trend so the chart isn't sparse
+  MARKETS.forEach(m=>{
+    if(!liveOrders[m]) points = points.concat(MOCK_SALES.filter(s=>s.marketplace===m));
+  });
+  return points;
+}
+
+// ---------- LIVE API STUBS (fill in once you have real keys) ----------
+// Set this to your deployed backend (see omnisync_backend/README.md). Until you
+// deploy it, this stays empty and the app clearly tells you to set it instead
+// of silently failing or faking data.
+const BACKEND_URL = ''; // e.g. 'https://omnisync-backend.vercel.app'
+
+async function callBackend(path, creds){
+  if(!BACKEND_URL) throw new Error('Backend not configured — set BACKEND_URL in index.html to your deployed proxy URL.');
+  const resp = await fetch(`${BACKEND_URL}${path}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(creds)
+  });
+  const data = await resp.json();
+  if(!resp.ok) throw new Error(data.error + (data.detail ? ' — ' + data.detail : ''));
+  return data.orders.map(o=>({...o, date:new Date(o.date)}));
+}
+
+async function fetchLiveAmazonOrders(creds){ return callBackend('/api/amazon-orders', creds); }
+async function fetchLiveTrendyolOrders(creds){ return callBackend('/api/trendyol-orders', creds); }
+async function fetchLiveNoonOrders(creds){ return callBackend('/api/noon-orders', creds); }
+
+const LIVE_FETCHERS = {amazon:fetchLiveAmazonOrders, noon:fetchLiveNoonOrders, trendyol:fetchLiveTrendyolOrders};
+
+// Called immediately after a marketplace is marked Connected — fetches real
+// data right away and re-renders every tab so it shows up instantly.
+async function connectAndSync(m, creds){
+  liveError[m] = null;
+  try{
+    const orders = await LIVE_FETCHERS[m](creds);
+    liveOrders[m] = orders;
+  }catch(e){
+    liveOrders[m] = null; // fall back to mock for this marketplace
+    liveError[m] = e.message + ' — likely blocked by CORS; browser-only apps usually need a backend proxy for this marketplace.';
+    console.error(m, e);
+  }
+  safe(renderDashboard,'dashboard');
+  safe(renderMarketplace,'marketplace');
+  safe(renderReports,'reports');
+  safe(renderIntegrations,'integrations');
+}
+
+// ---------- Render: Dashboard ----------
+let charts = {};
+function makeChart(id, config){
+  if(charts[id]) { charts[id].destroy(); }
+  charts[id] = new Chart(document.getElementById(id), config);
+  return charts[id];
+}
+
+function renderDashboard(){
+  const SALES = getCombinedSales();
+  const totalRevenue = SALES.reduce((s,p)=>s+p.revenue,0);
+  const totalOrders = SALES.reduce((s,p)=>s+p.orders,0);
+  document.getElementById('kpiRevenue').textContent = currency(totalRevenue);
+  document.getElementById('kpiOrders').textContent = totalOrders.toLocaleString();
+  document.getElementById('kpiAov').textContent = currency(totalRevenue/totalOrders);
+  document.getElementById('kpiLowStock').textContent = PRODUCTS.filter(p=>p.stock<=p.reorder).length;
+
+  const byDay = {};
+  SALES.forEach(s=>{ const k = s.date.toISOString().slice(0,10); byDay[k]=(byDay[k]||0)+s.revenue; });
+  const labels = Object.keys(byDay).sort();
+  makeChart('revenueChart', {
+    type:'line',
+    data:{labels, datasets:[{data:labels.map(k=>byDay[k]), borderColor:'#b3c5ff', backgroundColor:'rgba(179,197,255,.15)', fill:true, tension:.35, pointRadius:0}]},
+    options:{plugins:{legend:{display:false}}, scales:{x:{display:false},y:{display:false}}}
+  });
+
+  const shareByMp = {}; SALES.forEach(s=>{shareByMp[s.marketplace]=(shareByMp[s.marketplace]||0)+s.revenue;});
+  const total = Object.values(shareByMp).reduce((a,b)=>a+b,0);
+  makeChart('shareChart', {
+    type:'doughnut',
+    data:{labels:MARKETS.map(m=>MP_LABEL[m]), datasets:[{data:MARKETS.map(m=>shareByMp[m]), backgroundColor:MARKETS.map(m=>MP_COLOR[m])}]},
+    options:{plugins:{legend:{display:false}}}
+  });
+  document.getElementById('shareLegend').innerHTML = MARKETS.map(m=>
+    `<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span><span class="badge" style="background:${MP_COLOR[m]}"></span>${MP_LABEL[m]}</span><b>${Math.round(shareByMp[m]/total*100)}%</b></div>`
+  ).join('');
+}
+
+// ---------- Render: Marketplace ----------
+let mpFilter = null;
+function renderMarketplace(){
+  const SALES = getCombinedSales();
+  const ORDERS = getCombinedOrders();
+  const chips = document.getElementById('mpChips');
+  chips.innerHTML = '<span class="chip '+(mpFilter===null?'active':'')+'" data-mp="all">All</span>' +
+    MARKETS.map(m=>`<span class="chip ${mpFilter===m?'active':''}" data-mp="${m}">${MP_LABEL[m]}</span>`).join('');
+  chips.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ mpFilter = c.dataset.mp==='all'?null:c.dataset.mp; renderMarketplace(); });
+
+  const cardsDiv = document.getElementById('mpCards');
+  const list = mpFilter ? [mpFilter] : MARKETS;
+  cardsDiv.innerHTML = list.map(m=>{
+    const mpSales = SALES.filter(s=>s.marketplace===m);
+    const revenue = mpSales.reduce((s,p)=>s+p.revenue,0);
+    const orderCount = mpSales.reduce((s,p)=>s+p.orders,0);
+    const mpOrders = ORDERS.filter(o=>o.marketplace===m);
+    const returned = mpOrders.filter(o=>o.status==='Returned').length;
+    const returnRate = mpOrders.length? (returned/mpOrders.length*100).toFixed(1) : '0.0';
+    return `<div class="card" style="margin-bottom:14px;">
+      <div style="display:flex;align-items:center;margin-bottom:12px;"><span class="badge" style="background:${MP_COLOR[m]}"></span><b>${MP_LABEL[m]}</b></div>
+      <div class="row">
+        <div style="flex:1"><div class="kpi-value" style="font-size:16px;">${currency(revenue)}</div><div class="kpi-label">Revenue</div></div>
+        <div style="flex:1"><div class="kpi-value" style="font-size:16px;">${orderCount}</div><div class="kpi-label">Orders</div></div>
+        <div style="flex:1"><div class="kpi-value" style="font-size:16px;">${returnRate}%</div><div class="kpi-label">Return Rate</div></div>
+      </div></div>`;
+  }).join('');
+
+  const filteredOrders = (mpFilter?ORDERS.filter(o=>o.marketplace===mpFilter):ORDERS).slice(0,25);
+  document.getElementById('ordersBody').innerHTML = filteredOrders.map(o=>
+    `<tr><td>${o.id}</td><td><span class="badge" style="background:${MP_COLOR[o.marketplace]}"></span>${MP_LABEL[o.marketplace]}</td><td>${o.city}</td><td>${o.date.toLocaleDateString()}</td><td>${currency(o.total)}</td><td><span class="status s-${o.status.toLowerCase()}">${o.status}</span></td></tr>`
+  ).join('');
+}
+
+// ---------- Render: Inventory ----------
+let lowStockOnly = false, searchTerm = '';
+function renderInventory(){
+  let list = PRODUCTS;
+  if(searchTerm) list = list.filter(p=>p.name.toLowerCase().includes(searchTerm)||p.sku.toLowerCase().includes(searchTerm));
+  if(lowStockOnly) list = list.filter(p=>p.stock<=p.reorder);
+  document.getElementById('productList').innerHTML = list.map(p=>{
+    const margin = ((p.price-p.cost)/p.price*100).toFixed(0);
+    const low = p.stock<=p.reorder;
+    return `<div class="product-row">
+      <div><b>${p.name}</b><div class="kpi-label">${p.sku} · ${MP_LABEL[p.marketplace]} · margin ${margin}%</div></div>
+      <div style="text-align:right"><div>${currency(p.price)}</div><div class="${low?'low':'kpi-label'}">Stock: ${p.stock}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// ---------- Render: Reports ----------
+function renderReports(){
+  const SALES = getCombinedSales();
+  const ORDERS = getCombinedOrders();
+  const totalRevenue = SALES.reduce((s,p)=>s+p.revenue,0);
+  const totalCost = PRODUCTS.reduce((s,p)=>s+p.cost*p.unitsSold30d,0);
+  const profit = totalRevenue-totalCost;
+  const returned = ORDERS.filter(o=>o.status==='Returned').length;
+  const cancelled = ORDERS.filter(o=>o.status==='Cancelled').length;
+  const returnRate = (returned/ORDERS.length*100).toFixed(1);
+
+  const insights = [];
+  const lowStockCount = PRODUCTS.filter(p=>p.stock<=p.reorder).length;
+  if(lowStockCount>0) insights.push(`⚠️ ${lowStockCount} products are below reorder level — restock soon.`);
+  insights.push(returnRate>8 ? `🔴 Return rate is ${returnRate}% — above healthy 8% threshold.` : `✅ Return rate is healthy at ${returnRate}%.`);
+  const byMp={}; SALES.forEach(s=>byMp[s.marketplace]=(byMp[s.marketplace]||0)+s.revenue);
+  const best = Object.entries(byMp).sort((a,b)=>b[1]-a[1])[0];
+  insights.push(`📈 ${MP_LABEL[best[0]]} is your top-performing channel this month.`);
+  const lowMargin = PRODUCTS.filter(p=>((p.price-p.cost)/p.price*100)<20).length;
+  if(lowMargin>0) insights.push(`💰 ${lowMargin} products have margin below 20% — review pricing.`);
+  document.getElementById('insights').innerHTML = insights.map(i=>`<div class="insight">${i}</div>`).join('');
+
+  const top5 = [...PRODUCTS].sort((a,b)=>(b.unitsSold30d*b.price)-(a.unitsSold30d*a.price)).slice(0,5);
+  makeChart('topProductsChart', {
+    type:'bar',
+    data:{labels:top5.map(p=>p.name), datasets:[{data:top5.map(p=>p.unitsSold30d*p.price), backgroundColor:top5.map(p=>MP_COLOR[p.marketplace])}]},
+    options:{plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#c2c6d8',font:{size:10}}},y:{display:false}}}
+  });
+
+  document.getElementById('profitSummary').innerHTML = `
+    <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Total Revenue</span><b>${currency(totalRevenue)}</b></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Estimated COGS</span><b>${currency(totalCost)}</b></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1px solid var(--outline);margin-top:4px;"><span class="kpi-label">Estimated Net Profit</span><b>${currency(profit)}</b></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Returned Orders</span><b>${returned}</b></div>
+    <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Cancelled Orders</span><b>${cancelled}</b></div>
+  `;
+}
+
+// ---------- Integrations (localStorage credential store) ----------
+const FIELD_HINTS = {
+  amazon: 'Client ID (API Key), Client Secret (API Secret), Refresh Token → Seller ID field',
+  noon: 'Noon Partner/FBPI API key — request from your Noon account manager',
+  trendyol: 'Seller Panel → Account Details → Integration Details'
+};
+function loadCreds(m){ return JSON.parse(localStorage.getItem('creds_'+m) || '{"apiKey":"","apiSecret":"","sellerId":"","connected":false}'); }
+function saveCreds(m, c){ localStorage.setItem('creds_'+m, JSON.stringify(c)); }
+
+function renderIntegrations(){
+  const container = document.getElementById('connCards');
+  container.innerHTML = MARKETS.map(m=>{
+    const c = loadCreds(m);
+    const liveCount = liveOrders[m] ? liveOrders[m].length : null;
+    let statusLine;
+    if(liveCount !== null) statusLine = `<span style="color:var(--secondary)">● Live — ${liveCount} orders synced</span>`;
+    else if(c.connected && liveError[m]) statusLine = `<span style="color:var(--error)">● Connected, but live sync failed</span>`;
+    else if(c.connected) statusLine = `<span style="color:var(--tertiary)">● Connected — syncing…</span>`;
+    else statusLine = `<span style="color:var(--on-surface-v)">○ Not connected</span>`;
+    return `<div class="conn-card" data-mp="${m}">
+      <div class="conn-head"><span class="dot" style="background:${MP_COLOR[m]}"></span><b>${MP_LABEL[m]}</b>
+        <span style="margin-left:auto;font-size:12px;">${statusLine}</span></div>
+      <div class="hint">${FIELD_HINTS[m]}</div>
+      ${liveError[m] ? `<div class="insight" style="border:1px solid var(--error);margin-bottom:10px;">⚠️ ${liveError[m]}</div>` : ''}
+      <div class="field"><label>${m==='amazon'?'Refresh Token':'Seller / Merchant ID'}</label><input class="f-sellerId" value="${c.sellerId}"></div>
+      <div class="field"><label>API Key / Client ID</label><input class="f-apiKey" type="password" value="${c.apiKey}"></div>
+      <div class="field"><label>API Secret / Client Secret</label><input class="f-apiSecret" type="password" value="${c.apiSecret}"></div>
+      <button class="save-btn">Save & Connect</button> <button class="secondary disconnect-btn">Disconnect</button>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('.conn-card').forEach(card=>{
+    const m = card.dataset.mp;
+    card.querySelector('.save-btn').onclick = async ()=>{
+      const apiKey = card.querySelector('.f-apiKey').value;
+      const apiSecret = card.querySelector('.f-apiSecret').value;
+      const sellerId = card.querySelector('.f-sellerId').value;
+      const creds = {apiKey, apiSecret, sellerId, connected: !!(apiKey && apiSecret)};
+      saveCreds(m, creds);
+      renderIntegrations(); // show "syncing…" immediately
+      if(creds.connected) await connectAndSync(m, creds); // fetch real data now and refresh all tabs
+    };
+    card.querySelector('.disconnect-btn').onclick = ()=>{
+      saveCreds(m, {apiKey:'',apiSecret:'',sellerId:'',connected:false});
+      liveOrders[m] = null; liveError[m] = null;
+      renderIntegrations();
+      safe(renderDashboard,'dashboard'); safe(renderMarketplace,'marketplace'); safe(renderReports,'reports');
+    };
+  });
+}
+
+// ---------- Tab switching ----------
+document.querySelectorAll('.nav-item').forEach(item=>{
+  item.onclick = ()=>{
+    document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById(item.dataset.tab).classList.add('active');
+  };
+});
+document.getElementById('searchBox').oninput = e=>{ searchTerm = e.target.value.toLowerCase(); renderInventory(); };
+document.getElementById('lowStockChip').onclick = e=>{ lowStockOnly = !lowStockOnly; e.target.classList.toggle('active'); renderInventory(); };
+
+// ---------- Init ----------
+function safe(fn,name){ try{ fn(); }catch(e){ console.error('Render failed:', name, e); } }
+safe(renderIntegrations, 'integrations'); // render first so it never gets blocked by chart errors
+safe(renderInventory, 'inventory');
+safe(renderMarketplace, 'marketplace');
+safe(renderReports, 'reports');
+safe(renderDashboard, 'dashboard');
+MARKETS.forEach(m=>{
+  const c = loadCreds(m);
+  if(c.connected) connectAndSync(m, c);
+});
+
+</script>
+</body>
+</html>
