@@ -59,6 +59,15 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
 .insight{background:var(--surface-ch);border-radius:12px;padding:12px 14px;margin-bottom:8px;font-size:13px;display:flex;gap:10px;align-items:flex-start;}
 .product-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface-c);border-radius:12px;padding:12px 16px;margin-bottom:8px;}
 .low{color:var(--error);font-weight:700;}
+.filterbar{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;background:var(--surface-c);border-radius:14px;padding:14px;margin-bottom:20px;}
+.filterbar .field{margin:0;min-width:150px;}
+.filterbar button{height:40px;}
+.perm-row{display:flex;align-items:center;gap:10px;background:var(--surface-c);border-radius:12px;padding:12px 16px;margin-bottom:8px;}
+.perm-row .name{font-weight:600;min-width:140px;}
+.perm-tag{font-size:11px;padding:2px 8px;border-radius:8px;background:var(--surface-ch);color:var(--on-surface-v);margin-right:4px;}
+.checkbox-row{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0;}
+.checkbox-row label{display:flex;align-items:center;gap:6px;font-size:13px;width:auto;color:var(--on-surface-v);}
+.checkbox-row input[type=checkbox]{width:auto;}
 @media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr);}.row{flex-direction:column;}.sidebar{display:none;}}
 </style>
 </head>
@@ -70,12 +79,16 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
     <div class="nav-item" data-tab="marketplace">🏬 Marketplaces</div>
     <div class="nav-item" data-tab="inventory">📦 Inventory</div>
     <div class="nav-item" data-tab="reports">📈 Reports</div>
+    <div class="nav-item" data-tab="advertising">📣 Advertising</div>
+    <div class="nav-item" data-tab="finances">💵 Finances</div>
+    <div class="nav-item" data-tab="permissions">🛡️ User Permissions</div>
     <div class="nav-item" data-tab="integrations">🔌 Integrations</div>
   </div>
   <div class="main">
 
     <div class="tab-content active" id="dashboard">
       <h1>Executive Dashboard</h1>
+      <div id="filterBar-dashboard"></div>
       <div class="grid">
         <div class="card"><div class="kpi-delta up">+12.4%</div><div class="kpi-value" id="kpiRevenue">-</div><div class="kpi-label">Revenue (30d)</div></div>
         <div class="card"><div class="kpi-delta up">+8.1%</div><div class="kpi-value" id="kpiOrders">-</div><div class="kpi-label">Orders (30d)</div></div>
@@ -93,7 +106,7 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
 
     <div class="tab-content" id="marketplace">
       <h1>Marketplace Command Center</h1>
-      <div id="mpChips" style="margin-bottom:18px;"></div>
+      <div id="filterBar-marketplace"></div>
       <div id="mpCards"></div>
       <h2>Recent Orders</h2>
       <table><thead><tr><th>Order</th><th>Marketplace</th><th>City</th><th>Date</th><th>Total</th><th>Status</th></tr></thead><tbody id="ordersBody"></tbody></table>
@@ -101,6 +114,7 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
 
     <div class="tab-content" id="inventory">
       <h1>Inventory Hub</h1>
+      <div id="filterBar-inventory"></div>
       <div class="field"><input id="searchBox" placeholder="Search SKU or product name"></div>
       <div class="chip" id="lowStockChip">Low stock only</div>
       <div style="height:14px;"></div>
@@ -109,11 +123,50 @@ button.secondary{background:transparent;border:1px solid var(--outline);color:va
 
     <div class="tab-content" id="reports">
       <h1>Reports & Insights</h1>
+      <div id="filterBar-reports"></div>
       <div id="insights"></div>
       <h2>Top 5 Products by Revenue</h2>
       <div class="card chart-card"><canvas id="topProductsChart"></canvas></div>
       <h2>Profitability Summary</h2>
       <div class="card" id="profitSummary"></div>
+    </div>
+
+    <div class="tab-content" id="advertising">
+      <h1>Advertising</h1>
+      <div id="filterBar-advertising"></div>
+      <div class="grid" id="adKpis"></div>
+      <h2>Spend vs Sales by Marketplace</h2>
+      <div class="card chart-card"><canvas id="adChart"></canvas></div>
+      <h2>Campaign Performance</h2>
+      <table><thead><tr><th>Campaign</th><th>Marketplace</th><th>Spend</th><th>Sales</th><th>ACOS</th><th>ROAS</th></tr></thead><tbody id="adCampaignsBody"></tbody></table>
+    </div>
+
+    <div class="tab-content" id="finances">
+      <h1>Finances</h1>
+      <div id="filterBar-finances"></div>
+      <div class="grid" id="financeKpis"></div>
+      <h2>Invoices & Payouts</h2>
+      <table><thead><tr><th>Invoice</th><th>Marketplace</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead><tbody id="invoicesBody"></tbody></table>
+    </div>
+
+    <div class="tab-content" id="permissions">
+      <h1>User Permissions</h1>
+      <p class="hint">Create child accounts with limited access to specific sections. Stored locally for this demo build.</p>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="field"><label>Name</label><input id="permName" placeholder="e.g. Sara Al-Otaibi"></div>
+        <div class="field"><label>Email</label><input id="permEmail" placeholder="sara@company.com"></div>
+        <div class="field"><label>Role</label>
+          <select id="permRole">
+            <option>Viewer</option>
+            <option>Manager</option>
+            <option>Finance</option>
+            <option>Custom</option>
+          </select>
+        </div>
+        <div class="checkbox-row" id="permSections"></div>
+        <button id="addPermBtn">Add User</button>
+      </div>
+      <div id="permList"></div>
     </div>
 
     <div class="tab-content" id="integrations">
@@ -181,9 +234,90 @@ const PRODUCTS = genProducts();
 const MOCK_ORDERS = genOrders(150);
 const currency = n => 'SAR ' + Math.round(n).toLocaleString('en-US');
 
+function genAdCampaigns(){
+  const names = ['Brand Awareness', 'Sponsored Products', 'Retargeting', 'New Launch Boost', 'Holiday Push'];
+  const campaigns = [];
+  MARKETS.forEach(mp=>{
+    names.forEach(name=>{
+      if(rand()<0.3) return;
+      const spend = 200+Math.floor(rand()*1800);
+      const sales = spend*(1.5+rand()*3);
+      campaigns.push({name, marketplace:mp, spend, sales, acos:(spend/sales*100), roas:(sales/spend)});
+    });
+  });
+  return campaigns;
+}
+function genInvoices(){
+  const statuses=['Paid','Pending','Processing','Overdue'];
+  const now = new Date();
+  return Array.from({length:24}, (_,i)=>{
+    const mp = MARKETS[Math.floor(rand()*3)];
+    const d = new Date(now.getTime() - rand()*60*24*3600*1000);
+    return {id:'INV-'+(8000+i), marketplace:mp, date:d, amount:300+Math.floor(rand()*4000), status:statuses[Math.floor(rand()*statuses.length)]};
+  }).sort((a,b)=>b.date-a.date);
+}
+const AD_CAMPAIGNS = genAdCampaigns();
+const INVOICES = genInvoices();
+
 // liveOrders[marketplace] = array of real orders once successfully fetched, else null (falls back to mock)
 const liveOrders = {amazon:null, noon:null, trendyol:null};
 const liveError = {amazon:null, noon:null, trendyol:null};
+
+// ---------- Per-tab filters (marketplace + date range), each tab independent ----------
+function defaultFilter(){
+  const end = new Date();
+  const start = new Date(); start.setDate(end.getDate()-30);
+  return { marketplace:'all', start: start.toISOString().slice(0,10), end: end.toISOString().slice(0,10) };
+}
+const filters = {}; // tabKey -> {marketplace, start, end}
+['dashboard','marketplace','inventory','reports','advertising','finances'].forEach(t=>filters[t]=defaultFilter());
+
+function renderFilterBar(tabKey, onApply){
+  const el = document.getElementById('filterBar-'+tabKey);
+  if(!el) return;
+  const f = filters[tabKey];
+  el.innerHTML = `
+    <div class="filterbar">
+      <div class="field"><label>Marketplace</label>
+        <select id="fb-mp-${tabKey}">
+          <option value="all" ${f.marketplace==='all'?'selected':''}>All Marketplaces</option>
+          ${MARKETS.map(m=>`<option value="${m}" ${f.marketplace===m?'selected':''}>${MP_LABEL[m]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>From</label><input type="date" id="fb-start-${tabKey}" value="${f.start}"></div>
+      <div class="field"><label>To</label><input type="date" id="fb-end-${tabKey}" value="${f.end}"></div>
+      <button id="fb-apply-${tabKey}">Apply</button>
+    </div>`;
+  document.getElementById(`fb-apply-${tabKey}`).onclick = ()=>{
+    filters[tabKey] = {
+      marketplace: document.getElementById(`fb-mp-${tabKey}`).value,
+      start: document.getElementById(`fb-start-${tabKey}`).value,
+      end: document.getElementById(`fb-end-${tabKey}`).value,
+    };
+    onApply();
+  };
+}
+
+function filterOrders(orders, f){
+  const start = new Date(f.start); const end = new Date(f.end); end.setHours(23,59,59,999);
+  return orders.filter(o=>{
+    if(f.marketplace!=='all' && o.marketplace!==f.marketplace) return false;
+    return o.date >= start && o.date <= end;
+  });
+}
+
+function filterOrdersAsSales(salesPoints, f){
+  const start = new Date(f.start); const end = new Date(f.end); end.setHours(23,59,59,999);
+  return salesPoints.filter(s=>{
+    if(f.marketplace!=='all' && s.marketplace!==f.marketplace) return false;
+    return s.date >= start && s.date <= end;
+  });
+}
+
+function filterProducts(products, f){
+  if(f.marketplace==='all') return products;
+  return products.filter(p=>p.marketplace===f.marketplace);
+}
 
 function getCombinedOrders(){
   let all = [];
@@ -259,13 +393,15 @@ function makeChart(id, config){
 }
 
 function renderDashboard(){
-  const SALES = getCombinedSales();
+  renderFilterBar('dashboard', ()=>safe(renderDashboard,'dashboard'));
+  const f = filters.dashboard;
+  const SALES = filterOrdersAsSales(getCombinedSales(), f);
   const totalRevenue = SALES.reduce((s,p)=>s+p.revenue,0);
   const totalOrders = SALES.reduce((s,p)=>s+p.orders,0);
   document.getElementById('kpiRevenue').textContent = currency(totalRevenue);
   document.getElementById('kpiOrders').textContent = totalOrders.toLocaleString();
   document.getElementById('kpiAov').textContent = currency(totalRevenue/totalOrders);
-  document.getElementById('kpiLowStock').textContent = PRODUCTS.filter(p=>p.stock<=p.reorder).length;
+  document.getElementById('kpiLowStock').textContent = filterProducts(PRODUCTS, f).filter(p=>p.stock<=p.reorder).length;
 
   const byDay = {};
   SALES.forEach(s=>{ const k = s.date.toISOString().slice(0,10); byDay[k]=(byDay[k]||0)+s.revenue; });
@@ -289,17 +425,14 @@ function renderDashboard(){
 }
 
 // ---------- Render: Marketplace ----------
-let mpFilter = null;
 function renderMarketplace(){
-  const SALES = getCombinedSales();
-  const ORDERS = getCombinedOrders();
-  const chips = document.getElementById('mpChips');
-  chips.innerHTML = '<span class="chip '+(mpFilter===null?'active':'')+'" data-mp="all">All</span>' +
-    MARKETS.map(m=>`<span class="chip ${mpFilter===m?'active':''}" data-mp="${m}">${MP_LABEL[m]}</span>`).join('');
-  chips.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ mpFilter = c.dataset.mp==='all'?null:c.dataset.mp; renderMarketplace(); });
+  renderFilterBar('marketplace', ()=>safe(renderMarketplace,'marketplace'));
+  const f = filters.marketplace;
+  const SALES = filterOrdersAsSales(getCombinedSales(), f);
+  const ORDERS = filterOrders(getCombinedOrders(), f);
 
   const cardsDiv = document.getElementById('mpCards');
-  const list = mpFilter ? [mpFilter] : MARKETS;
+  const list = f.marketplace==='all' ? MARKETS : [f.marketplace];
   cardsDiv.innerHTML = list.map(m=>{
     const mpSales = SALES.filter(s=>s.marketplace===m);
     const revenue = mpSales.reduce((s,p)=>s+p.revenue,0);
@@ -316,7 +449,7 @@ function renderMarketplace(){
       </div></div>`;
   }).join('');
 
-  const filteredOrders = (mpFilter?ORDERS.filter(o=>o.marketplace===mpFilter):ORDERS).slice(0,25);
+  const filteredOrders = ORDERS.slice(0,25);
   document.getElementById('ordersBody').innerHTML = filteredOrders.map(o=>
     `<tr><td>${o.id}</td><td><span class="badge" style="background:${MP_COLOR[o.marketplace]}"></span>${MP_LABEL[o.marketplace]}</td><td>${o.city}</td><td>${o.date.toLocaleDateString()}</td><td>${currency(o.total)}</td><td><span class="status s-${o.status.toLowerCase()}">${o.status}</span></td></tr>`
   ).join('');
@@ -325,7 +458,8 @@ function renderMarketplace(){
 // ---------- Render: Inventory ----------
 let lowStockOnly = false, searchTerm = '';
 function renderInventory(){
-  let list = PRODUCTS;
+  renderFilterBar('inventory', ()=>safe(renderInventory,'inventory'));
+  let list = filterProducts(PRODUCTS, filters.inventory);
   if(searchTerm) list = list.filter(p=>p.name.toLowerCase().includes(searchTerm)||p.sku.toLowerCase().includes(searchTerm));
   if(lowStockOnly) list = list.filter(p=>p.stock<=p.reorder);
   document.getElementById('productList').innerHTML = list.map(p=>{
@@ -340,27 +474,30 @@ function renderInventory(){
 
 // ---------- Render: Reports ----------
 function renderReports(){
-  const SALES = getCombinedSales();
-  const ORDERS = getCombinedOrders();
+  renderFilterBar('reports', ()=>safe(renderReports,'reports'));
+  const f = filters.reports;
+  const SALES = filterOrdersAsSales(getCombinedSales(), f);
+  const ORDERS = filterOrders(getCombinedOrders(), f);
+  const FPRODUCTS = filterProducts(PRODUCTS, f);
   const totalRevenue = SALES.reduce((s,p)=>s+p.revenue,0);
-  const totalCost = PRODUCTS.reduce((s,p)=>s+p.cost*p.unitsSold30d,0);
+  const totalCost = FPRODUCTS.reduce((s,p)=>s+p.cost*p.unitsSold30d,0);
   const profit = totalRevenue-totalCost;
   const returned = ORDERS.filter(o=>o.status==='Returned').length;
   const cancelled = ORDERS.filter(o=>o.status==='Cancelled').length;
-  const returnRate = (returned/ORDERS.length*100).toFixed(1);
+  const returnRate = ORDERS.length ? (returned/ORDERS.length*100).toFixed(1) : '0.0';
 
   const insights = [];
-  const lowStockCount = PRODUCTS.filter(p=>p.stock<=p.reorder).length;
+  const lowStockCount = FPRODUCTS.filter(p=>p.stock<=p.reorder).length;
   if(lowStockCount>0) insights.push(`⚠️ ${lowStockCount} products are below reorder level — restock soon.`);
   insights.push(returnRate>8 ? `🔴 Return rate is ${returnRate}% — above healthy 8% threshold.` : `✅ Return rate is healthy at ${returnRate}%.`);
   const byMp={}; SALES.forEach(s=>byMp[s.marketplace]=(byMp[s.marketplace]||0)+s.revenue);
-  const best = Object.entries(byMp).sort((a,b)=>b[1]-a[1])[0];
-  insights.push(`📈 ${MP_LABEL[best[0]]} is your top-performing channel this month.`);
-  const lowMargin = PRODUCTS.filter(p=>((p.price-p.cost)/p.price*100)<20).length;
+  const bestEntry = Object.entries(byMp).sort((a,b)=>b[1]-a[1])[0];
+  if(bestEntry) insights.push(`📈 ${MP_LABEL[bestEntry[0]]} is your top-performing channel in this range.`);
+  const lowMargin = FPRODUCTS.filter(p=>((p.price-p.cost)/p.price*100)<20).length;
   if(lowMargin>0) insights.push(`💰 ${lowMargin} products have margin below 20% — review pricing.`);
   document.getElementById('insights').innerHTML = insights.map(i=>`<div class="insight">${i}</div>`).join('');
 
-  const top5 = [...PRODUCTS].sort((a,b)=>(b.unitsSold30d*b.price)-(a.unitsSold30d*a.price)).slice(0,5);
+  const top5 = [...FPRODUCTS].sort((a,b)=>(b.unitsSold30d*b.price)-(a.unitsSold30d*a.price)).slice(0,5);
   makeChart('topProductsChart', {
     type:'bar',
     data:{labels:top5.map(p=>p.name), datasets:[{data:top5.map(p=>p.unitsSold30d*p.price), backgroundColor:top5.map(p=>MP_COLOR[p.marketplace])}]},
@@ -374,6 +511,108 @@ function renderReports(){
     <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Returned Orders</span><b>${returned}</b></div>
     <div style="display:flex;justify-content:space-between;padding:6px 0;"><span class="kpi-label">Cancelled Orders</span><b>${cancelled}</b></div>
   `;
+}
+
+// ---------- Render: Advertising ----------
+function renderAdvertising(){
+  renderFilterBar('advertising', ()=>safe(renderAdvertising,'advertising'));
+  const f = filters.advertising;
+  const campaigns = f.marketplace==='all' ? AD_CAMPAIGNS : AD_CAMPAIGNS.filter(c=>c.marketplace===f.marketplace);
+
+  const totalSpend = campaigns.reduce((s,c)=>s+c.spend,0);
+  const totalSales = campaigns.reduce((s,c)=>s+c.sales,0);
+  const avgAcos = totalSales? (totalSpend/totalSales*100) : 0;
+  const avgRoas = totalSpend? (totalSales/totalSpend) : 0;
+
+  document.getElementById('adKpis').innerHTML = `
+    <div class="card"><div class="kpi-value">${currency(totalSpend)}</div><div class="kpi-label">Ad Spend</div></div>
+    <div class="card"><div class="kpi-value">${currency(totalSales)}</div><div class="kpi-label">Attributed Sales</div></div>
+    <div class="card"><div class="kpi-value">${avgAcos.toFixed(1)}%</div><div class="kpi-label">ACOS (Ad Cost / Sales)</div></div>
+    <div class="card"><div class="kpi-value">${avgRoas.toFixed(2)}x</div><div class="kpi-label">ROAS (Return on Ad Spend)</div></div>`;
+
+  const byMp = {}; MARKETS.forEach(m=>byMp[m]={spend:0,sales:0});
+  campaigns.forEach(c=>{ byMp[c.marketplace].spend+=c.spend; byMp[c.marketplace].sales+=c.sales; });
+  makeChart('adChart', {
+    type:'bar',
+    data:{ labels: MARKETS.map(m=>MP_LABEL[m]),
+      datasets:[
+        {label:'Spend', data:MARKETS.map(m=>byMp[m].spend), backgroundColor:'#ffb95f'},
+        {label:'Sales', data:MARKETS.map(m=>byMp[m].sales), backgroundColor:'#4edea3'},
+      ]},
+    options:{plugins:{legend:{labels:{color:'#c2c6d8'}}}, scales:{x:{ticks:{color:'#c2c6d8'}},y:{display:false}}}
+  });
+
+  document.getElementById('adCampaignsBody').innerHTML = campaigns.map(c=>`
+    <tr><td>${c.name}</td><td><span class="badge" style="background:${MP_COLOR[c.marketplace]}"></span>${MP_LABEL[c.marketplace]}</td>
+    <td>${currency(c.spend)}</td><td>${currency(c.sales)}</td><td>${c.acos.toFixed(1)}%</td><td>${c.roas.toFixed(2)}x</td></tr>`
+  ).join('');
+}
+
+// ---------- Render: Finances ----------
+function renderFinances(){
+  renderFilterBar('finances', ()=>safe(renderFinances,'finances'));
+  const f = filters.finances;
+  const invoices = filterOrders(INVOICES.map(i=>({...i})), f); // reuse date+marketplace filter (shape-compatible: has .date, .marketplace)
+  const FPRODUCTS = filterProducts(PRODUCTS, f);
+
+  const paid = invoices.filter(i=>i.status==='Paid').reduce((s,i)=>s+i.amount,0);
+  const pending = invoices.filter(i=>i.status==='Pending'||i.status==='Processing').reduce((s,i)=>s+i.amount,0);
+  const overdue = invoices.filter(i=>i.status==='Overdue').reduce((s,i)=>s+i.amount,0);
+  const stockValueSold = FPRODUCTS.reduce((s,p)=>s+p.price*p.unitsSold30d,0);
+
+  document.getElementById('financeKpis').innerHTML = `
+    <div class="card"><div class="kpi-value">${currency(paid)}</div><div class="kpi-label">Payments Released</div></div>
+    <div class="card"><div class="kpi-value">${currency(pending)}</div><div class="kpi-label">Pending Payouts</div></div>
+    <div class="card"><div class="kpi-value">${currency(overdue)}</div><div class="kpi-label">Overdue</div></div>
+    <div class="card"><div class="kpi-value">${currency(stockValueSold)}</div><div class="kpi-label">Stock Value Sold (30d)</div></div>`;
+
+  document.getElementById('invoicesBody').innerHTML = invoices.map(i=>`
+    <tr><td>${i.id}</td><td><span class="badge" style="background:${MP_COLOR[i.marketplace]}"></span>${MP_LABEL[i.marketplace]}</td>
+    <td>${i.date.toLocaleDateString()}</td><td>${currency(i.amount)}</td>
+    <td><span class="status ${i.status==='Paid'?'s-delivered':i.status==='Overdue'?'s-returned':'s-pending'}">${i.status}</span></td></tr>`
+  ).join('');
+}
+
+// ---------- User Permissions (localStorage) ----------
+const ALL_SECTIONS = ['Dashboard','Marketplaces','Inventory','Reports','Advertising','Finances','Integrations'];
+function loadPermUsers(){ return JSON.parse(localStorage.getItem('permUsers')||'[]'); }
+function savePermUsers(list){ localStorage.setItem('permUsers', JSON.stringify(list)); }
+
+function renderPermissions(){
+  const boxesEl = document.getElementById('permSections');
+  boxesEl.innerHTML = ALL_SECTIONS.map(s=>`<label><input type="checkbox" value="${s}"> ${s}</label>`).join('');
+
+  document.getElementById('addPermBtn').onclick = ()=>{
+    const name = document.getElementById('permName').value.trim();
+    const email = document.getElementById('permEmail').value.trim();
+    const role = document.getElementById('permRole').value;
+    const sections = Array.from(boxesEl.querySelectorAll('input:checked')).map(c=>c.value);
+    if(!name || !email){ alert('Name and email are required'); return; }
+    const users = loadPermUsers();
+    users.push({id:Date.now(), name, email, role, sections});
+    savePermUsers(users);
+    document.getElementById('permName').value=''; document.getElementById('permEmail').value='';
+    boxesEl.querySelectorAll('input').forEach(c=>c.checked=false);
+    renderPermissions();
+  };
+
+  document.getElementById('permList').innerHTML = loadPermUsers().map(u=>`
+    <div class="perm-row">
+      <span class="name">${u.name}</span>
+      <span class="kpi-label" style="min-width:160px;">${u.email}</span>
+      <span class="perm-tag">${u.role}</span>
+      <span style="flex:1;">${u.sections.map(s=>`<span class="perm-tag">${s}</span>`).join('')}</span>
+      <button class="secondary remove-perm" data-id="${u.id}">Remove</button>
+    </div>`
+  ).join('') || `<p class="hint">No child accounts yet.</p>`;
+
+  document.querySelectorAll('.remove-perm').forEach(btn=>{
+    btn.onclick = ()=>{
+      const id = Number(btn.dataset.id);
+      savePermUsers(loadPermUsers().filter(u=>u.id!==id));
+      renderPermissions();
+    };
+  });
 }
 
 // ---------- Integrations (localStorage credential store) ----------
@@ -445,6 +684,9 @@ safe(renderIntegrations, 'integrations'); // render first so it never gets block
 safe(renderInventory, 'inventory');
 safe(renderMarketplace, 'marketplace');
 safe(renderReports, 'reports');
+safe(renderAdvertising, 'advertising');
+safe(renderFinances, 'finances');
+safe(renderPermissions, 'permissions');
 safe(renderDashboard, 'dashboard');
 MARKETS.forEach(m=>{
   const c = loadCreds(m);
