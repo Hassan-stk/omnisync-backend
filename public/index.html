@@ -416,6 +416,7 @@ async function callBackend(path, creds){
   });
   const data = await resp.json();
   if(!resp.ok) throw new Error(data.error + (data.detail ? ' — ' + data.detail : ''));
+  if(!Array.isArray(data.orders)) throw new Error(`Backend returned an unexpected response (no "orders" array) — the deployed ${path} may be outdated. Re-upload the latest version of this file to your GitHub repo.`);
   return data.orders.map(o=>({...o, date:new Date(o.date)}));
 }
 
@@ -429,6 +430,7 @@ async function callBackendProducts(path, creds){
   const resp = await fetch(path, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(creds) });
   const data = await resp.json();
   if(!resp.ok) throw new Error(data.error + (data.detail ? ' — ' + data.detail : ''));
+  if(!Array.isArray(data.products)) throw new Error(`Backend returned an unexpected response (no "products" array) — the deployed ${path} may be outdated.`);
   return data.products;
 }
 async function fetchLiveTrendyolProducts(creds){ return callBackendProducts('/api/trendyol-products', creds); }
@@ -481,7 +483,7 @@ function renderDashboard(){
   const totalOrders = SALES.reduce((s,p)=>s+p.orders,0);
   document.getElementById('kpiRevenue').textContent = currency(totalRevenue);
   document.getElementById('kpiOrders').textContent = totalOrders.toLocaleString();
-  document.getElementById('kpiAov').textContent = currency(totalRevenue/totalOrders);
+  document.getElementById('kpiAov').textContent = totalOrders ? currency(totalRevenue/totalOrders) : currency(0);
   document.getElementById('kpiLowStock').textContent = filterProducts(getCombinedProducts(), f).filter(p=>typeof p.stock==='number' && p.stock<=p.reorder).length;
 
   const byDay = {};
@@ -501,7 +503,7 @@ function renderDashboard(){
     options:{plugins:{legend:{display:false}}}
   });
   document.getElementById('shareLegend').innerHTML = MARKETS.map(m=>
-    `<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span><span class="badge" style="background:${MP_COLOR[m]}"></span>${MP_LABEL[m]}</span><b>${Math.round(shareByMp[m]/total*100)}%</b></div>`
+    `<div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span><span class="badge" style="background:${MP_COLOR[m]}"></span>${MP_LABEL[m]}</span><b>${total? Math.round((shareByMp[m]||0)/total*100) : 0}%</b></div>`
   ).join('');
 }
 
@@ -619,14 +621,15 @@ function renderReports(){
   const returnRate = ORDERS.length ? (returned/ORDERS.length*100).toFixed(1) : '0.0';
 
   const insights = [];
-  const lowStockCount = FPRODUCTS.filter(p=>p.stock<=p.reorder).length;
+  const lowStockCount = FPRODUCTS.filter(p=>typeof p.stock==='number' && p.stock<=p.reorder).length;
   if(lowStockCount>0) insights.push(`⚠️ ${lowStockCount} products are below reorder level — restock soon.`);
   insights.push(returnRate>8 ? `🔴 Return rate is ${returnRate}% — above healthy 8% threshold.` : `✅ Return rate is healthy at ${returnRate}%.`);
   const byMp={}; SALES.forEach(s=>byMp[s.marketplace]=(byMp[s.marketplace]||0)+s.revenue);
   const bestEntry = Object.entries(byMp).sort((a,b)=>b[1]-a[1])[0];
   if(bestEntry) insights.push(`📈 ${MP_LABEL[bestEntry[0]]} is your top-performing channel in this range.`);
-  const lowMargin = FPRODUCTS.filter(p=>((p.price-p.cost)/p.price*100)<20).length;
+  const lowMargin = FPRODUCTS.filter(p=>p.price>0 && ((p.price-p.cost)/p.price*100)<20).length;
   if(lowMargin>0) insights.push(`💰 ${lowMargin} products have margin below 20% — review pricing.`);
+  if(insights.length===0) insights.push('No data in the selected range yet — try widening the date range.');
   document.getElementById('insights').innerHTML = insights.map(i=>`<div class="insight">${i}</div>`).join('');
 
   const top5 = [...FPRODUCTS].sort((a,b)=>(b.unitsSold30d*b.price)-(a.unitsSold30d*a.price)).slice(0,5);
@@ -844,9 +847,9 @@ function renderIntegrations(){
     };
     card.querySelector('.disconnect-btn').onclick = ()=>{
       saveCreds(m, {apiKey:'',apiSecret:'',sellerId:'',connected:false});
-      liveOrders[m] = null; liveError[m] = null;
+      liveOrders[m] = null; liveError[m] = null; liveProducts[m] = null;
       renderIntegrations();
-      safe(renderDashboard,'dashboard'); safe(renderMarketplace,'marketplace'); safe(renderReports,'reports');
+      safe(renderDashboard,'dashboard'); safe(renderMarketplace,'marketplace'); safe(renderInventory,'inventory'); safe(renderReports,'reports');
     };
   });
 }
