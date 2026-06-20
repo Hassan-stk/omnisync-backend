@@ -18,12 +18,15 @@ module.exports = async (req, res) => {
     }
 
     const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
-    const url = `https://apigw.trendyol.com/integration/order/sellers/${sellerId}/orders`;
+    const endDate = Date.now();
+    const startDate = endDate - 14 * 24 * 60 * 60 * 1000; // Trendyol's max allowed range per call
+    const url = `https://apigw.trendyol.com/integration/order/sellers/${sellerId}/orders?startDate=${startDate}&endDate=${endDate}&size=200&orderByField=PackageLastModifiedDate&orderByDirection=DESC`;
 
     const resp = await fetch(url, {
       headers: {
         Authorization: `Basic ${auth}`,
         'User-Agent': `${sellerId} - SelfIntegration`,
+        storeFrontCode: 'SA', // required header — Saudi Arabia storefront
       },
     });
 
@@ -34,11 +37,11 @@ module.exports = async (req, res) => {
 
     const data = await resp.json();
     const orders = (data.content || []).map((o) => ({
-      id: String(o.orderNumber || o.id),
+      id: String(o.orderNumber || o.shipmentPackageId),
       marketplace: 'trendyol',
       date: o.orderDate ? new Date(o.orderDate).toISOString() : new Date().toISOString(),
-      total: parseFloat(o.totalPrice || 0),
-      status: o.status || 'Pending',
+      total: parseFloat(o.packageTotalPrice ?? o.packageGrossAmount ?? 0),
+      status: o.status || o.shipmentPackageStatus || 'Pending',
       city: o.shipmentAddress?.city || '',
     }));
 
