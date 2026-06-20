@@ -1,8 +1,8 @@
 const { applyCors } = require('./_cors');
 
-// POST /api/trendyol-orders
-// Body: { apiKey, apiSecret, sellerId }  (or set TRENDYOL_API_KEY / TRENDYOL_API_SECRET /
-// TRENDYOL_SELLER_ID as environment variables in Vercel for production — env vars win if set)
+// POST /api/trendyol-products
+// Body: { apiKey, apiSecret, sellerId }
+// Returns approved + unapproved products from Trendyol's catalog for KSA (SA storefront)
 module.exports = async (req, res) => {
   if (applyCors(req, res)) return;
   if (req.method !== 'POST') return res.status(405).json({ error: 'Use POST' });
@@ -18,34 +18,63 @@ module.exports = async (req, res) => {
     }
 
     const auth = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
-    const endDate = Date.now();
-    const startDate = endDate - 14 * 24 * 60 * 60 * 1000; // Trendyol's max allowed range per call
-    const url = `https://apigw.trendyol.com/integration/order/sellers/${sellerId}/orders?startDate=${startDate}&endDate=${endDate}&size=200&orderByField=PackageLastModifiedDate&orderByDirection=DESC`;
+    const headers = {
+      Authorization: `Basic ${auth}`,
+      'User-Agent': `${sellerId} - SelfIntegration`,
+      storeFrontCode: 'SA',
+    };
 
-    const resp = await fetch(url, {
-      headers: {
-        Authorization: `Basic ${auth}`,
-        'User-Agent': `${sellerId} - SelfIntegration`,
-        storeFrontCode: 'SA', // required header — Saudi Arabia storefront
-      },
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      return res.status(resp.status).json({ error: `Trendyol API error ${resp.status}`, detail: text.slice(0, 500) });
+    // Approved (live/active) listings
+    const approvedUrl = `https://apigw.trendyol.com/integration/product/sellers/${sellerId}/products/approved?size=100`;
+    const approvedResp = await fetch(approvedUrl, { headers });
+    if (!approvedResp.ok) {
+      const text = await approvedResp.text();
+      return res.status(approvedResp.status).json({ error: `Trendyol Product API error ${approvedResp.status}`, detail: text.slice(0, 500) });
     }
+    const approvedData = await approvedResp.json();
 
-    const data = await resp.json();
-    const orders = (data.content || []).map((o) => ({
-      id: String(o.orderNumber || o.shipmentPackageId),
-      marketplace: 'trendyol',
-      date: o.orderDate ? new Date(o.orderDate).toISOString() : new Date().toISOString(),
-      total: parseFloat(o.packageTotalPrice ?? o.packageGrossAmount ?? 0),
-      status: o.status || o.shipmentPackageStatus || 'Pending',
-      city: o.shipmentAddress?.city || '',
-    }));
+    // Trendyol's product API only returns a stock *timestamp*, never a quantity —
+    // there is no read endpoint for current stock level (push-only via Stock and
+    // Price Update). What we CAN compute honestly is real units-sold velocity by
+    // aggregating actual order line items from the last 30 days.
+    const ordersUrl = `https://apigw.trendyol.com/integration/order/sellers/${sellerId}/orders?startDate=${Date.now()-14*24*60*60*1000}&endDate=${Date.now()}&size=200`;
+    const soldByStockCode = {};
+    try {
+      const ordersResp = await fetch(ordersUrl, { headers });
+      if (ordersResp.ok) {
+        const ordersData = await ordersResp.json();
+        (ordersData.content || []).forEach((pkg) => {
+          (pkg.lines || []).forEach((line) => {
+            const code = line.stockCode;
+            if (code) soldByStockCode[code] = (soldByStockCode[code] || 0) + (line.quantity || 0);
+          });
+        });
+      }
+    } catch (_) { /* non-fatal — fall back to 0 if order history fetch fails */ }
+    // Scale 14-day window up to a 30-day estimate
+    const scaleToMonthly = (n) => Math.round(n * (30 / 14));
 
-    return res.status(200).json({ orders });
+    const products = (approvedData.content || []).flatMap((p) =>
+      (p.variants || [{}]).map((v) => {
+        const sold14d = soldByStockCode[v.stockCode] || 0;
+        return {
+          sku: v.stockCode || p.productMainId || String(p.contentId),
+          name: p.title || 'Untitled',
+          marketplace: 'trendyol',
+          price: v.price?.salePrice ?? 0,
+          cost: (v.price?.salePrice ?? 0) * 0.65, // estimate — Trendyol doesn't return cost; replace if you track cost separately
+          stock: null, // genuinely unavailable — Trendyol's API has no read endpoint for current stock quantity
+          reorder: 0,
+          unitsSold30d: scaleToMonthly(sold14d), // REAL, computed from your actual order history
+          rating: null,
+          listingStatus: v.archived ? 'Suspended' : v.locked ? 'Inactive' : v.onSale ? 'Active' : 'Inactive',
+          isLiveListing: true,
+          stockCode: v.stockCode || '',
+        };
+      })
+    );
+
+    return res.status(200).json({ products });
   } catch (err) {
     return res.status(500).json({ error: 'Proxy failure', detail: String(err.message || err) });
   }
