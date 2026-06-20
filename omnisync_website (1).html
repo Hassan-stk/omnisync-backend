@@ -216,7 +216,7 @@ function getCombinedSales(){
 // Set this to your deployed backend (see omnisync_backend/README.md). Until you
 // deploy it, this stays empty and the app clearly tells you to set it instead
 // of silently failing or faking data.
-const BACKEND_URL = 'https://omnisync-backend.vercel.app'; // e.g. 'https://omnisync-backend.vercel.app'
+const BACKEND_URL = ''; // e.g. 'https://omnisync-backend.vercel.app'
 
 async function callBackend(path, creds){
   if(!BACKEND_URL) throw new Error('Backend not configured — set BACKEND_URL in index.html to your deployed proxy URL.');
