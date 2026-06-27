@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OmniSync - Marketplace Intelligence Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#070d19;--surface:#0e1728;--surface2:#141f35;--surface3:#1b2943;--line:#263552;--text:#e8eeff;--muted:#9eabc5;--blue:#1976ff;--green:#47daa0;--orange:#ffb55a;--red:#ff7d8a;--purple:#a9b8ff;--cyan:#51d7ff;--shadow:0 22px 70px rgba(0,0,0,.32)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top right,#13203b 0,#070d19 42%,#050912 100%);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px}.app{display:flex;min-height:100vh}.sidebar{width:245px;background:rgba(12,20,36,.96);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column}.logo{font-size:24px;font-weight:950;color:#cbd8ff;letter-spacing:-.9px}.logo small{display:block;color:#7d8ca8;font-size:10px;text-transform:uppercase;letter-spacing:1.7px;margin-top:3px}.nav{margin-top:24px}.nav button{width:100%;border:0;background:transparent;color:#bdc8df;text-align:left;padding:13px 14px;border-radius:10px;margin:3px 0;font-weight:850;cursor:pointer}.nav button:hover{background:#17243d}.nav button.active{background:linear-gradient(90deg,#1976ff,#075fd1);color:white;box-shadow:0 12px 35px rgba(25,118,255,.25)}.workspace{margin-top:auto;border:1px solid var(--line);background:#0b1426;border-radius:12px;padding:14px;font-size:12px}.switch{width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1px solid #354765;background:#18243d;color:#e4ebff;font-weight:850;cursor:pointer}.main{flex:1;min-width:0}.top{min-height:72px;background:rgba(7,14,28,.94);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;padding:12px 26px;position:sticky;top:0;z-index:10;backdrop-filter:blur(14px)}.search{height:42px;border:1px solid #2b3a58;background:#0d172a;color:var(--text);border-radius:10px;padding:0 15px;width:300px}.globalFilters{display:flex;gap:10px;flex-wrap:wrap}.select,.btn,input[type=date],input,textarea{border:1px solid #344560;background:#121d31;color:var(--text);border-radius:9px;padding:11px 13px;font-weight:800}.btn{cursor:pointer;transition:.18s}.btn:hover{transform:translateY(-1px);filter:brightness(1.08)}.btn.primary{background:var(--blue);border-color:var(--blue);color:white}.btn.ghost{background:#162238}.btn.small{padding:7px 10px;font-size:12px}.topActions{margin-left:auto;display:flex;align-items:center;gap:12px}.iconBtn{width:40px;height:40px;border-radius:11px;border:1px solid #31415f;background:#121d31;color:#d8e1ff;cursor:pointer}.profileButton{display:flex;align-items:center;gap:10px;border:1px solid #31415f;background:#121d31;border-radius:13px;padding:8px 10px;cursor:pointer;color:white}.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--green));display:grid;place-items:center;font-weight:950}.profileText{text-align:right;font-size:12px;font-weight:950}.profileText span{display:block;color:#8aa9ff;font-size:10px;text-transform:uppercase}.profileMenu{position:absolute;right:25px;top:68px;width:360px;background:#0d172a;border:1px solid #30405f;border-radius:16px;box-shadow:var(--shadow);padding:18px;display:none}.profileMenu.open{display:block}.profileGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.page{padding:28px 30px 46px}.tab{display:none}.tab.active{display:block}.hero{display:flex;justify-content:space-between;align-items:start;gap:18px;margin-bottom:18px}h1{font-size:38px;line-height:1;margin:0;color:#dfe7ff;letter-spacing:-1.5px}h2{margin:0 0 12px}.sub{color:var(--muted);margin:8px 0 0}.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.grid{display:grid;gap:18px}.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}.layout2{grid-template-columns:1.55fr .85fr}.layout3{grid-template-columns:repeat(3,1fr)}.card{background:linear-gradient(180deg,rgba(16,26,47,.98),rgba(10,17,31,.98));border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}.label{color:#9eabc5;text-transform:uppercase;font-size:12px;font-weight:950}.value{font-size:28px;font-weight:950;margin-top:12px}.muted{color:var(--muted)}.green{color:var(--green)}.orange{color:var(--orange)}.red{color:var(--red)}.blue{color:#68a5ff}.purple{color:var(--purple)}.badge,.tag{display:inline-block;border-radius:999px;background:#223452;color:#c4d2ff;padding:5px 9px;font-size:11px;font-weight:900}.tag.amazon{background:#f6b750;color:#07101f}.tag.noon{background:#ffcf66;color:#07101f}.tag.trendyol{background:#3dde9f;color:#07101f}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.table{padding:0;overflow:hidden}.tableHead{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}table{width:100%;border-collapse:collapse}th,td{padding:14px 16px;border-bottom:1px solid #202d45;text-align:left}th{font-size:11px;color:#a7b2ca;text-transform:uppercase}tr.drill{cursor:pointer}tr.drill:hover{background:#17243b}.status{border-radius:999px;padding:7px 10px;background:#12392f;color:#46e0a5;font-size:10px;font-weight:950}.status.warn{background:#3b2c1c;color:#ffc067}.status.bad{background:#442331;color:#ff8f9a}.status.pending{background:#2c3446;color:#cbd5ed}.canvasBox{height:315px}.canvasBox.tall{height:410px}.miniChart{height:185px}.note,.recommendation{border-left:4px solid var(--purple);background:#202a45;margin:10px 0;padding:14px;border-radius:9px}.note.green,.recommendation.good{border-color:var(--green);background:#17352f}.note.orange,.recommendation.warn{border-color:var(--orange);background:#332b2d}.note.red{border-color:var(--red);background:#362435}.progress{height:8px;border-radius:99px;background:#26334d;overflow:hidden}.progress i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--green))}.quickTabs{display:flex;border:1px solid #31415f;background:#121d31;border-radius:10px;overflow:hidden}.quickTabs button{background:transparent;border:0;color:#b6c2da;padding:10px 14px;font-weight:850;cursor:pointer}.quickTabs button.active{background:#9fb3ff;color:#0f1b31}.formGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.formGroup label{display:block;color:#a8b4ca;font-size:12px;font-weight:950;margin-bottom:7px}.formGroup input,.formGroup select,.formGroup textarea{width:100%}.connector{border:1px solid #2e3d5a;border-radius:16px;padding:18px;background:#101b30}.connectorHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.dot{width:10px;height:10px;border-radius:50%;background:#59677f;display:inline-block;margin-right:7px}.dot.ok{background:var(--green);box-shadow:0 0 12px var(--green)}.drawer{position:fixed;right:-430px;top:72px;width:410px;height:calc(100vh - 72px);background:#0b1426;border-left:1px solid var(--line);z-index:20;transition:.25s;box-shadow:-20px 0 60px rgba(0,0,0,.35);padding:22px;overflow:auto}.drawer.open{right:0}.modalShade{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:30;display:none}.modalShade.open{display:grid;place-items:center}.modal{width:min(660px,92vw);background:#0d172a;border:1px solid #31415f;border-radius:18px;padding:22px;box-shadow:var(--shadow)}.metricGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metricGrid label{background:#121d31;border:1px solid #2d3c5a;border-radius:10px;padding:10px;cursor:pointer}.heatmap{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}.cell{height:38px;border-radius:9px;background:rgba(25,118,255,var(--a));border:1px solid rgba(255,255,255,.06);display:grid;place-items:center;font-size:10px;cursor:pointer}.cell:hover{outline:2px solid var(--purple)}.toast{position:fixed;right:24px;bottom:24px;background:#12213b;border:1px solid #334765;color:white;border-radius:12px;padding:14px 16px;display:none;z-index:50}.toast.show{display:block}.section{display:none}.section.active{display:block}@media(max-width:1180px){.kpis,.layout2,.layout3,.formGrid{grid-template-columns:1fr}.sidebar{width:215px}.top{align-items:flex-start;flex-direction:column}.topActions{margin-left:0}.search{width:100%}h1{font-size:31px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo">OmniSync<small>Commerce OS</small></div>
+  <nav class="nav">
+    <button class="active" data-tab="dashboard">▦ &nbsp; Dashboard</button>
+    <button data-tab="integrations">🔐 &nbsp; Integrations</button>
+    <button data-tab="inventory">▣ &nbsp; Inventory</button>
+    <button data-tab="marketplaces">✣ &nbsp; Marketplaces</button>
+    <button data-tab="orders">▤ &nbsp; Orders & Returns</button>
+    <button data-tab="products">✚ &nbsp; Product & Access</button>
+    <button data-tab="finance">◈ &nbsp; Marketplace Finance</button>
+    <button data-tab="ads">▰ &nbsp; Advertising</button>
+    <button data-tab="analytics">▧ &nbsp; Analytics</button>
+    <button data-tab="settings">⚙ &nbsp; Settings</button>
+  </nav>
+  <div class="workspace"><b>Workspace Alpha</b><br><span class="muted">Live Marketplace Operations</span><button class="switch" onclick="toast('Workspace switcher opened')">Switch Workspace</button></div>
+</aside>
+<main class="main">
+  <div class="top">
+    <input class="search" id="search" placeholder="Search orders, SKU or metrics..." />
+    <div class="globalFilters">
+      <select class="select" id="globalMarket"><option value="all">All Marketplaces</option><option value="amazon">Amazon</option><option value="noon">Noon</option><option value="trendyol">Trendyol</option></select>
+      <input type="date" id="startDate" value="2023-10-01" />
+      <input type="date" id="endDate" value="2023-10-31" />
+      <button class="btn primary" onclick="applyGlobalFilters()">Apply Filters</button>
+    </div>
+    <div class="topActions">
+      <button class="iconBtn" onclick="openDrawer('Notifications','3 alerts: Amazon token expires soon, Noon sync warning, Trendyol orders synced successfully.')">🔔</button>
+      <button class="iconBtn" onclick="syncAll()">↻</button>
+      <button class="profileButton" onclick="toggleProfile()"><span class="avatar">AU</span><span class="profileText">Admin User<span>Operational Lead</span></span></button>
+      <div class="profileMenu" id="profileMenu">
+        <div class="row"><div><h2>Admin User</h2><span class="muted">admin@omnisync.local</span></div><span class="badge">Operational Lead</span></div>
+        <div class="profileGrid" style="margin-top:14px"><div class="card"><span class="label">Role</span><div class="value" style="font-size:18px">Admin</div></div><div class="card"><span class="label">MFA</span><div class="value green" style="font-size:18px">Enabled</div></div><div class="card"><span class="label">Last Login</span><div class="value" style="font-size:18px">Today</div></div><div class="card"><span class="label">Notifications</span><div class="value orange" style="font-size:18px">3 New</div></div></div>
+        <div class="row" style="margin-top:14px"><button class="btn ghost" onclick="toast('Account settings opened')">Account Settings</button><button class="btn ghost" onclick="toast('Security settings opened')">Security</button><button class="btn primary" onclick="toast('Profile saved')">Save Profile</button></div>
+      </div>
+    </div>
+  </div>
+  <section class="page">
+    <div id="dashboard" class="tab active">
+      <div class="hero"><div><h1>Command Dashboard</h1><p class="sub">Global filters control every KPI, report, table, chart and insight across the platform.</p></div><div class="toolbar"><span class="badge" id="scopeLabel"></span><button class="btn primary" onclick="exportCsv('dashboard')">Export Snapshot</button></div></div>
+      <div id="dashboardKpis" class="grid kpis"></div>
+      <div class="grid layout2" style="margin-top:18px"><div class="card"><div class="row"><b>Revenue & Orders Trend</b><span class="tag">Click points to drill down</span></div><div class="canvasBox"><canvas id="salesChart"></canvas></div></div><div class="card"><b>Conversion Funnel</b><div class="canvasBox"><canvas id="funnelChart"></canvas></div></div></div>
+      <div class="grid layout3" style="margin-top:18px"><div class="card"><b>Marketplace Health</b><div id="integrationHealth"></div></div><div class="card"><b>Actionable Recommendations</b><div id="dashRecs"></div></div><div class="card"><b>Live Sync Alerts</b><div id="liveAlerts"></div></div></div>
+    </div>
+
+    <div id="integrations" class="tab">
+      <div class="hero"><div><h1>Secure Integrations</h1><p class="sub">Connect Amazon, Noon and Trendyol using API credentials. Credentials are sent only to same-origin API proxy endpoints and can also be stored as Vercel environment variables.</p></div><div class="toolbar"><button class="btn primary" onclick="syncAll()">Sync All Marketplaces</button><button class="btn ghost" onclick="openDrawer('Security Model','Use environment variables in production. Browser-entered keys are used for the current connection flow. Never commit real keys to GitHub.')">Security Details</button></div></div>
+      <div class="grid layout3" id="connectors"></div>
+      <div class="grid layout2" style="margin-top:18px"><div class="card table"><div class="tableHead"><b>Sync Logs</b><button class="btn small" onclick="clearLogs()">Clear Logs</button></div><table><thead><tr><th>Time</th><th>Marketplace</th><th>Status</th><th>Message</th><th>Rows</th></tr></thead><tbody id="syncLogRows"></tbody></table></div><div class="card"><b>Data Accuracy Controls</b><div class="note green"><b>Validation:</b> order totals, dates, statuses and IDs are normalized before being shown in reports.</div><div class="note orange"><b>Reconciliation:</b> the platform flags mismatch between synced totals and calculated dashboard totals.</div><div class="note"><b>Real-time:</b> click Sync All or set a Vercel cron/background job to refresh the API cache at your preferred frequency.</div></div></div>
+    </div>
+
+    <div id="inventory" class="tab"><div class="hero"><div><h1>Inventory Hub</h1><p class="sub">Forecasting, stock-outs, purchase order suggestions and warehouse health.</p></div><button class="btn primary" onclick="toast('Purchase order created')">Create Purchase Order</button></div><div id="inventoryKpis" class="grid kpis"></div><div class="grid layout2" style="margin-top:18px"><div class="card"><b>Stock Forecast</b><div class="canvasBox"><canvas id="stockChart"></canvas></div></div><div class="card"><b>Warehouse Heatmap</b><div class="heatmap" id="warehouseHeat"></div></div></div><div class="card table" style="margin-top:18px"><div class="tableHead"><b>SKU Drill-down</b><button class="btn small" onclick="exportCsv('inventory')">Export</button></div><table><thead><tr><th>SKU</th><th>Marketplace</th><th>Stock</th><th>Velocity</th><th>Action</th></tr></thead><tbody id="skuRows"></tbody></table></div></div>
+
+    <div id="marketplaces" class="tab"><div class="hero"><div><h1>Marketplace Command</h1><p class="sub">Cross-platform sales, sync health, fees and operational monitoring.</p></div><button class="btn primary" onclick="syncAll()">Refresh Marketplace Data</button></div><div id="marketKpis" class="grid kpis"></div><div class="grid layout2" style="margin-top:18px"><div class="card"><b>Marketplace Comparison</b><div class="canvasBox"><canvas id="marketChart"></canvas></div></div><div class="card"><b>Expense Breakdown</b><div class="canvasBox"><canvas id="expenseChart"></canvas></div></div></div></div>
+
+    <div id="orders" class="tab"><div class="hero"><div><h1>Order & Returns Management</h1><p class="sub">Active orders, returns, refunds, task notes and SLA monitoring.</p></div><div class="toolbar"><span class="badge" id="orderCount"></span><button class="btn ghost" onclick="toast('Return logs opened')">Return Logs</button></div></div><div class="grid layout2"><div class="card table"><div class="tableHead"><b>Active Orders</b><button class="btn small" onclick="toast('Showing all orders')">View All</button></div><table><thead><tr><th>Order ID</th><th>Customer</th><th>Status</th><th>Value</th><th>Actions</th></tr></thead><tbody id="orderRows"></tbody></table></div><div class="card table"><div class="tableHead"><b>Product Returns</b><span class="badge">Pending Review</span></div><table><thead><tr><th>ID / Reason</th><th>Condition</th><th>Status</th><th>Refund</th></tr></thead><tbody id="returnRows"></tbody></table></div></div><div class="grid layout2" style="margin-top:18px"><div class="card"><b>Operational Health</b><div class="canvasBox"><canvas id="opsChart"></canvas></div></div><div class="card"><div class="row"><b>Internal Tasks / Notes</b><button class="btn small" onclick="addNote()">Add</button></div><div id="taskNotes"></div><textarea id="noteText" rows="3" placeholder="Write update and tag @Admin or @Team..."></textarea></div></div></div>
+
+    <div id="products" class="tab"><div class="hero"><div><h1>Product & Access Control</h1><p class="sub">Product management, marketplace mappings and user permissions.</p></div><div class="quickTabs"><button class="active" onclick="showProduct('productManagement',this)">Product Management</button><button onclick="showProduct('userPermissions',this)">User Permissions</button></div></div><div id="productKpis" class="grid kpis"></div><div id="productManagement" class="section active"><div class="card table" style="margin-top:18px"><div class="tableHead"><b>Product Catalog</b><button class="btn primary" onclick="toast('Add new SKU form opened')">Add New SKU</button></div><table><thead><tr><th>SKU</th><th>Product</th><th>Marketplace</th><th>Stock</th><th>Price</th><th>Status</th></tr></thead><tbody id="productRows"></tbody></table></div></div><div id="userPermissions" class="section"><div class="card table" style="margin-top:18px"><div class="tableHead"><b>Team Permissions</b><button class="btn primary" onclick="toast('Invite sent')">Invite User</button></div><table><thead><tr><th>User</th><th>Role</th><th>Access</th><th>MFA</th><th>Actions</th></tr></thead><tbody><tr><td>Admin User</td><td>Operational Lead</td><td>All modules</td><td class="green">Enabled</td><td><button class="btn small">Edit</button></td></tr><tr><td>Sarah L.</td><td>Catalog Manager</td><td>Products, Inventory</td><td class="green">Enabled</td><td><button class="btn small">Edit</button></td></tr><tr><td>Finance Team</td><td>Analyst</td><td>Finance, Analytics</td><td class="orange">Pending</td><td><button class="btn small">Edit</button></td></tr></tbody></table></div></div></div>
+
+    <div id="finance" class="tab"><div class="hero"><div><h1>Marketplace Finance</h1><p class="sub">Fees, payouts, margins, refunds and reconciliation.</p></div><button class="btn primary" onclick="exportCsv('finance')">Export Finance Report</button></div><div id="financeKpis" class="grid kpis"></div><div class="grid layout2" style="margin-top:18px"><div class="card"><b>Revenue, Fees & Payout Trend</b><div class="canvasBox"><canvas id="financeChart"></canvas></div></div><div class="card table"><div class="tableHead"><b>Marketplace Payouts</b></div><table><thead><tr><th>Marketplace</th><th>Sales</th><th>Fees</th><th>Refunds</th><th>Net</th></tr></thead><tbody id="payoutRows"></tbody></table></div></div></div>
+
+    <div id="ads" class="tab"><div class="hero"><div><h1>Advertising Dashboard</h1><p class="sub">Campaign performance, customizable columns, recommendations and KPI drill-down.</p></div><div class="toolbar"><button class="btn ghost" onclick="openColumnModal()">Customize Columns</button><button class="btn primary" onclick="exportCsv('ads')">Export Report</button></div></div><div id="adsKpis" class="grid kpis"></div><div class="grid layout2" style="margin-top:18px"><div class="card"><div class="row"><b>Performance Trend</b><span class="tag">Spend • ROAS • ACOS</span></div><div class="canvasBox"><canvas id="adsChart"></canvas></div></div><div class="card"><b>AI Recommendations</b><div id="adsRecs"></div></div></div><div class="card table" style="margin-top:18px"><div class="tableHead"><b>Campaign Performance</b><span class="badge" id="adColumnCount"></span></div><table><thead><tr id="adHead"></tr></thead><tbody id="adRows"></tbody></table></div></div>
+
+    <div id="analytics" class="tab"><div class="hero"><div><h1>Interactive Analytics</h1><p class="sub">Dynamic filters, drill-down insights and clear visual reports.</p></div><div class="toolbar"><select class="select" id="metric" onchange="applyGlobalFilters()"><option value="revenue">Revenue</option><option value="orders">Orders</option><option value="acos">ACOS</option><option value="profit">Profit</option></select><button class="btn primary" onclick="openDrawer('Drill-down Insights','Select a row or chart point to inspect marketplace, SKU, campaign and date level details.')">Drill Down</button></div></div><div class="grid layout2"><div class="card"><b id="analyticsTitle">Revenue Trend</b><div class="canvasBox tall"><canvas id="analyticsChart"></canvas></div></div><div class="card"><b>Correlation Heatmap</b><div class="heatmap" id="correlationHeat"></div></div></div><div class="card table" style="margin-top:18px"><div class="tableHead"><b>Insight Rows</b><button class="btn small" onclick="exportCsv('analytics')">Export</button></div><table><thead><tr><th>Marketplace</th><th>Revenue</th><th>ROAS</th><th>Drill Down</th></tr></thead><tbody id="analyticsRows"></tbody></table></div></div>
+
+    <div id="settings" class="tab"><div class="hero"><div><h1>Settings</h1><p class="sub">Account, notifications, automation, security and platform preferences.</p></div><button class="btn primary" onclick="toast('Settings saved')">Save Settings</button></div><div class="grid layout3"><div class="card"><h2>Account Settings</h2><p class="muted">Profile, password, MFA and session preferences.</p><button class="btn ghost">Manage Account</button></div><div class="card"><h2>Notifications</h2><p class="muted">Email, in-app alerts and sync failure notifications.</p><button class="btn ghost">Configure Alerts</button></div><div class="card"><h2>Automation</h2><p class="muted">Sync schedule, reconciliation rules and approval workflow.</p><button class="btn ghost">Automation Rules</button></div></div></div>
+  </section>
+</main>
+</div>
+<div class="drawer" id="drawer"><button class="btn small" style="float:right" onclick="drawer.classList.remove('open')">Close</button><h2 id="drawerTitle">Details</h2><p class="muted" id="drawerBody"></p><div class="miniChart"><canvas id="drawerChart"></canvas></div></div>
+<div class="modalShade" id="columnModal"><div class="modal"><div class="row"><h2>Customize Advertising Columns</h2><button class="btn small" onclick="columnModal.classList.remove('open')">Close</button></div><p class="muted">Choose the metrics to display in the Advertising performance table.</p><div class="metricGrid" id="metricChecks"></div><div class="row" style="margin-top:16px"><button class="btn ghost" onclick="selectAllMetrics()">Select All</button><button class="btn primary" onclick="saveColumns()">Apply Columns</button></div></div></div>
+<div class="toast" id="toastBox"></div>
+<script>
+const palette={blue:'#1976ff',green:'#47daa0',orange:'#ffb55a',red:'#ff7d8a',purple:'#a9b8ff',cyan:'#51d7ff'};
+const MARKETS=[{key:'amazon',name:'Amazon',color:palette.blue},{key:'noon',name:'Noon',color:palette.orange},{key:'trendyol',name:'Trendyol',color:palette.green}];
+const MNAME={amazon:'Amazon',noon:'Noon',trendyol:'Trendyol'};
+
+// SINGLE SOURCE OF TRUTH — real orders synced from marketplace APIs. No mock fallback.
+// Shape per order (normalized by backend adapters): {id, marketplace, date, total, status, city, units?, spend?, fee?}
+let liveOrders=JSON.parse(localStorage.getItem('liveOrders')||'[]').map(o=>({...o,date:new Date(o.date)}));
+let liveProducts=JSON.parse(localStorage.getItem('liveProducts')||'[]');
+let syncState=JSON.parse(localStorage.getItem('omniSyncState')||'{}');
+let charts={};
+let adColumns=JSON.parse(localStorage.getItem('adColumns')||'null')||['Marketplace','Campaign','ACOS','ROAS','Clicks','Impressions','CTR','CVR','Orders','Sales','Spend','CPC','Revenue'];
+const allAdMetrics=['Marketplace','Campaign','ACOS','ROAS','Clicks','Impressions','CTR','CVR','Orders','Sales','Spend','CPC','Conversion Rate','Revenue','Keyword','Bid','CPA','Budget','Status','Attribution Sales'];
+
+function money(v){return 'SAR '+Math.round(v||0).toLocaleString()}
+function pct(v){return (Math.round((v||0)*10)/10)+'%'}
+function kpi(t,v,s,c='blue'){return `<div class="card"><div class="label">${t}</div><div class="value ${c}">${v}</div><p class="sub">${s}</p></div>`}
+function emptyCard(msg){return `<div class="card"><div class="note orange" style="margin:0"><b>No live data.</b><br><span class="muted">${msg}</span></div></div>`}
+function toast(msg){toastBox.textContent=msg;toastBox.classList.add('show');setTimeout(()=>toastBox.classList.remove('show'),2600)}
+
+// ---- Filtering scoped to marketplace + date range (global filters) ----
+function scopedOrders(){
+  const m=globalMarket.value, sd=new Date(startDate.value), ed=new Date(endDate.value); ed.setHours(23,59,59,999);
+  return liveOrders.filter(o=>{
+    if(m!=='all' && o.marketplace!==m) return false;
+    if(startDate.value && o.date<sd) return false;
+    if(endDate.value && o.date>ed) return false;
+    return true;
+  });
+}
+function scopedProducts(){
+  const m=globalMarket.value;
+  return liveProducts.filter(p=>m==='all'||p.marketplace===m);
+}
+function connectedMarkets(){return MARKETS.filter(x=>syncState[x.key]?.connected)}
+function hasData(){return liveOrders.length>0}
+
+function chart(id,type,labels,datasets,extra={}){if(charts[id])charts[id].destroy();let ctx=document.getElementById(id);if(!ctx)return;charts[id]=new Chart(ctx,{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#cbd6ee'}},tooltip:{mode:'index',intersect:false}},scales:type==='doughnut'||type==='pie'?{}:{x:{ticks:{color:'#9eabc5'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#9eabc5'},grid:{color:'rgba(255,255,255,.06)'}}},...extra}})}
+function clearChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// Group scoped orders into daily buckets for trend charts
+function dailySeries(orders){
+  const byDay={};
+  orders.forEach(o=>{const k=o.date.toISOString().slice(0,10);if(!byDay[k])byDay[k]={rev:0,orders:0};byDay[k].rev+=o.total;byDay[k].orders+=1;});
+  const days=Object.keys(byDay).sort();
+  return {labels:days.map(d=>d.slice(5)),rev:days.map(d=>byDay[d].rev),orders:days.map(d=>byDay[d].orders)};
+}
+
+function applyGlobalFilters(){
+  const mtext=globalMarket.options[globalMarket.selectedIndex].text;
+  scopeLabel.textContent=`${mtext} • ${startDate.value||'—'} to ${endDate.value||'—'}`;
+  renderAll();
+}
+
+function renderAll(){
+  const orders=scopedOrders();
+  const products=scopedProducts();
+  const rev=orders.reduce((t,o)=>t+o.total,0);
+  const orderCountN=orders.length;
+  const aov=orderCountN?rev/orderCountN:0;
+  const returned=orders.filter(o=>/return|refund|cancel/i.test(o.status||'')).length;
+  const returnRate=orderCountN?returned/orderCountN*100:0;
+  const ser=dailySeries(orders);
+
+  // ---- DASHBOARD ----
+  if(!hasData()){
+    dashboardKpis.innerHTML=emptyCard('Connect a marketplace in Integrations and click "Sync Now" to load real data. No mock data is shown.');
+    clearChart('salesChart');clearChart('funnelChart');
+    integrationHealth.innerHTML=MARKETS.map(x=>`<p><span class="dot ${syncState[x.key]?.connected?'ok':''}"></span><b>${x.name}</b><span style="float:right" class="${syncState[x.key]?.connected?'green':'orange'}">${syncState[x.key]?.connected?'Connected':'Not connected'}</span></p>`).join('');
+    dashRecs.innerHTML='<div class="note">Recommendations appear once live data is synced.</div>';
+    liveAlerts.innerHTML='<div class="note orange"><b>No live data.</b><br><span class="muted">Add credentials in Integrations and sync.</span></div>';
+  } else {
+    dashboardKpis.innerHTML=
+      kpi('Total Revenue',money(rev),`${orderCountN.toLocaleString()} orders in selected range`,'green')+
+      kpi('Avg Order Value',money(aov),'Across scoped orders','blue')+
+      kpi('Return Rate',pct(returnRate),`${returned} returned / cancelled`,returnRate>8?'red':'green')+
+      kpi('Connected APIs',connectedMarkets().length+'/3','Live integration coverage','purple');
+    chart('salesChart','line',ser.labels,[
+      {label:'Revenue',data:ser.rev,borderColor:palette.blue,backgroundColor:'rgba(25,118,255,.14)',fill:true,tension:.35},
+      {label:'Orders',data:ser.orders,borderColor:palette.green,tension:.35,yAxisID:'y1'}
+    ],{scales:{x:{ticks:{color:'#9eabc5'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#9eabc5'},grid:{color:'rgba(255,255,255,.06)'}},y1:{position:'right',ticks:{color:'#9eabc5'},grid:{display:false}}}});
+    const statusCounts={};orders.forEach(o=>{const s=o.status||'Unknown';statusCounts[s]=(statusCounts[s]||0)+1;});
+    chart('funnelChart','doughnut',Object.keys(statusCounts),[{data:Object.values(statusCounts),backgroundColor:[palette.blue,palette.orange,palette.green,palette.red,palette.purple,palette.cyan],borderWidth:0}],{cutout:'62%'});
+    integrationHealth.innerHTML=MARKETS.map(x=>`<p><span class="dot ${syncState[x.key]?.connected?'ok':''}"></span><b>${x.name}</b><span style="float:right" class="${syncState[x.key]?.connected?'green':'orange'}">${syncState[x.key]?.connected?'Connected':'Not connected'}</span></p><div class="progress"><i style="width:${syncState[x.key]?.connected?'99':'8'}%"></i></div>`).join('');
+    const topMarket=MARKETS.map(x=>({n:x.name,v:orders.filter(o=>o.marketplace===x.key).reduce((t,o)=>t+o.total,0)})).sort((a,b)=>b.v-a.v)[0];
+    dashRecs.innerHTML=`<div class="recommendation good"><b>Top channel: ${topMarket.n}</b><br><span class="muted">${money(topMarket.v)} revenue in selected scope.</span></div>`+(returnRate>8?`<div class="recommendation warn"><b>High return rate</b><br><span class="muted">${pct(returnRate)} — investigate top return reasons.</span></div>`:'');
+    liveAlerts.innerHTML=`<div class="note green"><b>${orderCountN.toLocaleString()} live orders</b> in the selected scope.</div><div class="note">All widgets recalculated from synced marketplace data only.</div>`;
+  }
+
+  // ---- INVENTORY ----
+  if(!products.length){
+    inventoryKpis.innerHTML=emptyCard('Product/inventory data loads after a product sync. Trendyol product sync is supported.');
+    clearChart('stockChart');warehouseHeat.innerHTML='';skuRows.innerHTML='<tr><td colspan="5" class="muted">No live product data.</td></tr>';
+  } else {
+    const known=products.filter(p=>typeof p.stock==='number');
+    inventoryKpis.innerHTML=
+      kpi('Listed Products',products.length.toLocaleString(),'In selected scope','blue')+
+      kpi('Active Listings',products.filter(p=>/active/i.test(p.listingStatus||'')).length+'','Live on marketplace','green')+
+      kpi('Inactive / Suspended',products.filter(p=>/inactive|suspend/i.test(p.listingStatus||'')).length+'','Need attention','orange')+
+      kpi('Stock Known',known.length+'/'+products.length,'Where API exposes stock','purple');
+    skuRows.innerHTML=products.slice(0,40).map(p=>`<tr><td>${p.sku||'—'}</td><td><span class="tag ${p.marketplace}">${MNAME[p.marketplace]||p.marketplace}</span></td><td>${typeof p.stock==='number'?p.stock:'—'}</td><td>${p.unitsSold30d!=null?p.unitsSold30d+' / 30d':'—'}</td><td><span class="status ${/active/i.test(p.listingStatus||'')?'':'warn'}">${p.listingStatus||'—'}</span></td></tr>`).join('');
+    clearChart('stockChart');warehouseHeat.innerHTML='';
+  }
+
+  // ---- MARKETPLACES ----
+  const conn=connectedMarkets();
+  if(!hasData()){
+    marketKpis.innerHTML=emptyCard('Marketplace comparison appears after syncing real orders.');
+    clearChart('marketChart');clearChart('expenseChart');
+  } else {
+    marketKpis.innerHTML=MARKETS.map(x=>{const mo=orders.filter(o=>o.marketplace===x.key);return kpi(x.name,money(mo.reduce((t,o)=>t+o.total,0)),`${mo.length} orders`,'green');}).join('')+kpi('Connected','('+conn.length+'/3)','Live APIs','blue');
+    chart('marketChart','bar',MARKETS.map(x=>x.name),[{label:'Revenue',data:MARKETS.map(x=>orders.filter(o=>o.marketplace===x.key).reduce((t,o)=>t+o.total,0)),backgroundColor:'rgba(25,118,255,.65)'},{label:'Orders',data:MARKETS.map(x=>orders.filter(o=>o.marketplace===x.key).length),backgroundColor:'rgba(71,218,160,.58)',yAxisID:'y1'}],{scales:{x:{ticks:{color:'#9eabc5'},grid:{color:'rgba(255,255,255,.05)'}},y:{ticks:{color:'#9eabc5'},grid:{color:'rgba(255,255,255,.06)'}},y1:{position:'right',ticks:{color:'#9eabc5'},grid:{display:false}}}});
+    const byMpRev=MARKETS.map(x=>orders.filter(o=>o.marketplace===x.key).reduce((t,o)=>t+o.total,0));
+    chart('expenseChart','pie',MARKETS.map(x=>x.name),[{data:byMpRev,backgroundColor:[palette.blue,palette.orange,palette.green],borderWidth:0}]);
+  }
+
+  // ---- ORDERS & RETURNS ----
+  if(!hasData()){
+    orderRows.innerHTML='<tr><td colspan="5" class="muted">No live orders.</td></tr>';
+    returnRows.innerHTML='<tr><td colspan="4" class="muted">No returns data.</td></tr>';
+    orderCount.textContent='0';clearChart('opsChart');
+  } else {
+    orderRows.innerHTML=orders.slice(0,25).map(o=>`<tr><td>${o.id}</td><td>${o.city||'—'}</td><td><span class="status ${/pending|process/i.test(o.status||'')?'pending':/return|cancel|refund/i.test(o.status||'')?'bad':''}">${o.status||'—'}</span></td><td>${money(o.total)}</td><td><span class="tag ${o.marketplace}">${MNAME[o.marketplace]}</span></td></tr>`).join('');
+    const rets=orders.filter(o=>/return|cancel|refund/i.test(o.status||'')).slice(0,15);
+    returnRows.innerHTML=rets.length?rets.map(o=>`<tr><td>${o.id}</td><td>—</td><td><span class="status bad">${o.status}</span></td><td class="red">-${money(o.total)}</td></tr>`).join(''):'<tr><td colspan="4" class="muted">No returns in scope.</td></tr>';
+    orderCount.textContent=orderCountN.toLocaleString()+' orders';
+    chart('opsChart','line',ser.labels,[{label:'Orders',data:ser.orders,borderColor:palette.purple,tension:.4}]);
+  }
+
+  // ---- PRODUCT & ACCESS ----
+  if(!products.length){
+    productKpis.innerHTML=emptyCard('Product catalog loads after product sync.');
+    productRows.innerHTML='<tr><td colspan="6" class="muted">No live products.</td></tr>';
+  } else {
+    productKpis.innerHTML=kpi('Total Listings',products.length.toLocaleString(),'Selected scope','blue')+kpi('Active',products.filter(p=>/active/i.test(p.listingStatus||'')).length+'','Live','green')+kpi('Inactive',products.filter(p=>/inactive/i.test(p.listingStatus||'')).length+'','Paused','orange')+kpi('Suspended',products.filter(p=>/suspend/i.test(p.listingStatus||'')).length+'','Blocked','red');
+    productRows.innerHTML=products.slice(0,40).map(p=>`<tr><td>${p.sku||'—'}</td><td>${p.name||'—'}</td><td><span class="tag ${p.marketplace}">${MNAME[p.marketplace]}</span></td><td>${typeof p.stock==='number'?p.stock:'—'}</td><td>${p.price!=null?money(p.price):'—'}</td><td><span class="status ${/active/i.test(p.listingStatus||'')?'':'warn'}">${p.listingStatus||'—'}</span></td></tr>`).join('');
+  }
+
+  // ---- FINANCE ----
+  if(!hasData()){
+    financeKpis.innerHTML=emptyCard('Finance metrics derive from real synced sales and fees.');
+    clearChart('financeChart');payoutRows.innerHTML='<tr><td colspan="5" class="muted">No live data.</td></tr>';
+  } else {
+    const fees=orders.reduce((t,o)=>t+(o.fee||0),0);
+    financeKpis.innerHTML=kpi('Net Sales',money(rev),'Gross marketplace sales','green')+kpi('Fees & Commissions',fees?money(fees):'—',fees?pct(fees/rev*100)+' blended fee':'Fee data not in API','orange')+kpi('Orders',orderCountN.toLocaleString(),'In scope','blue')+kpi('Return Value',money(orders.filter(o=>/return|cancel|refund/i.test(o.status||'')).reduce((t,o)=>t+o.total,0)),'Refund exposure','red');
+    chart('financeChart','line',ser.labels,[{label:'Revenue',data:ser.rev,borderColor:palette.green,backgroundColor:'rgba(71,218,160,.13)',fill:true,tension:.35}]);
+    payoutRows.innerHTML=MARKETS.map(x=>{const mo=orders.filter(o=>o.marketplace===x.key);if(!mo.length)return '';const s=mo.reduce((t,o)=>t+o.total,0);const f=mo.reduce((t,o)=>t+(o.fee||0),0);const r=mo.filter(o=>/return|cancel|refund/i.test(o.status||'')).reduce((t,o)=>t+o.total,0);return `<tr><td>${x.name}</td><td>${money(s)}</td><td>${f?money(f):'—'}</td><td class="red">${money(r)}</td><td class="green">${money(s-f-r)}</td></tr>`;}).join('')||'<tr><td colspan="5" class="muted">No live data.</td></tr>';
+  }
+
+  // ---- ADVERTISING ----
+  // Ads data only exists if the synced orders carry spend/ad fields, OR a dedicated ads sync is added.
+  const hasAdData=orders.some(o=>o.spend!=null);
+  if(!hasAdData){
+    adsKpis.innerHTML=emptyCard('Advertising data requires an Ads API sync (Amazon Ads / Trendyol Ads). Not yet connected — no mock figures shown.');
+    clearChart('adsChart');adsRecs.innerHTML='<div class="note">Connect an Ads API to populate this module.</div>';
+    adHead.innerHTML=adColumns.map(c=>`<th>${c}</th>`).join('');adRows.innerHTML=`<tr><td colspan="${adColumns.length}" class="muted">No live advertising data.</td></tr>`;adColumnCount.textContent=adColumns.length+' columns';
+  } else {
+    const spend=orders.reduce((t,o)=>t+(o.spend||0),0);
+    const roas=spend?rev/spend:0, acos=rev?spend/rev*100:0;
+    adsKpis.innerHTML=kpi('Ad Spend',money(spend),'Selected scope','orange')+kpi('ROAS',roas.toFixed(2)+'x','Revenue / spend','green')+kpi('ACOS',pct(acos),'Spend / revenue',acos>25?'red':'green')+kpi('Orders',orderCountN.toLocaleString(),'Attributed','blue');
+    chart('adsChart','line',ser.labels,[{label:'Revenue',data:ser.rev,borderColor:palette.blue,backgroundColor:'rgba(25,118,255,.20)',fill:true,tension:.4}]);
+    adsRecs.innerHTML='<div class="recommendation good"><b>Live ad metrics active</b><br><span class="muted">Computed from real spend in synced data.</span></div>';
+    renderAdTable(orders);
+  }
+}
+
+// ---- Advertising dynamic columns (reactive, per-user persisted) ----
+function renderAdTable(orders){
+  adHead.innerHTML=adColumns.map(c=>`<th>${c}</th>`).join('');adColumnCount.textContent=adColumns.length+' columns';
+  const byMp=MARKETS.map(x=>{const mo=orders.filter(o=>o.marketplace===x.key);if(!mo.length)return null;const rev=mo.reduce((t,o)=>t+o.total,0);const spend=mo.reduce((t,o)=>t+(o.spend||0),0);const ord=mo.length;return {x,rev,spend,ord,roas:spend?rev/spend:0,acos:rev?spend/rev*100:0};}).filter(Boolean);
+  adRows.innerHTML=byMp.map(d=>{const vals={'Marketplace':`<span class="tag ${d.x.key}">${d.x.name}</span>`,'Campaign':'All campaigns','ACOS':pct(d.acos),'ROAS':d.roas.toFixed(2)+'x','Clicks':'—','Impressions':'—','CTR':'—','CVR':'—','Orders':d.ord.toLocaleString(),'Sales':money(d.rev),'Spend':money(d.spend),'CPC':'—','Conversion Rate':'—','Revenue':money(d.rev),'Keyword':'—','Bid':'—','CPA':d.ord?money(d.spend/d.ord):'—','Budget':'—','Status':'Active','Attribution Sales':money(d.rev)};return `<tr>${adColumns.map(c=>`<td>${vals[c]??'—'}</td>`).join('')}</tr>`;}).join('')||`<tr><td colspan="${adColumns.length}" class="muted">No live advertising data.</td></tr>`;
+}
+function openColumnModal(){metricChecks.innerHTML=allAdMetrics.map(m=>`<label><input type="checkbox" ${adColumns.includes(m)?'checked':''} value="${m}" onchange="liveColumnToggle()"> ${m}</label>`).join('');columnModal.classList.add('open')}
+function liveColumnToggle(){adColumns=[...metricChecks.querySelectorAll('input:checked')].map(x=>x.value);localStorage.setItem('adColumns',JSON.stringify(adColumns));applyGlobalFilters();}
+function saveColumns(){if(!adColumns.length){toast('Select at least one column');return}columnModal.classList.remove('open');toast('Advertising columns updated')}
+function selectAllMetrics(){metricChecks.querySelectorAll('input').forEach(x=>x.checked=true);liveColumnToggle();}
+
+// ---- Integrations: connect + real sync (orders + products where supported) ----
+function renderConnectors(){connectors.innerHTML=MARKETS.map(x=>`<div class="connector"><div class="connectorHeader"><h2>${x.name}</h2><span><span class="dot ${syncState[x.key]?.connected?'ok':''}"></span>${syncState[x.key]?.connected?'Connected':'Not connected'}</span></div><div class="formGroup"><label>${x.key==='amazon'?'Refresh Token':'Seller / Partner ID'}</label><input id="${x.key}_seller" placeholder="Enter ID" type="password"></div>${x.key==='amazon'?'<div class="formGroup"><label>Merchant / Seller Token (for products)</label><input id="amazon_merchant" placeholder="e.g. A1B2C3..." type="password"></div>':''}<div class="formGroup"><label>API Key / Client ID</label><input id="${x.key}_key" placeholder="Enter API key" type="password"></div><div class="formGroup"><label>API Secret / Access Token</label><input id="${x.key}_secret" placeholder="Enter secret or token" type="password"></div><div class="row" style="margin-top:14px"><button class="btn primary" onclick="connectMarket('${x.key}')">Save & Connect</button><button class="btn ghost" onclick="syncMarket('${x.key}')">Sync Now</button></div><p class="muted" id="${x.key}_status">${syncState[x.key]?.message||'Waiting for credentials'}</p></div>`).join('')}
+function getCreds(key){const c={sellerId:document.getElementById(key+'_seller')?.value||'',apiKey:document.getElementById(key+'_key')?.value||'',apiSecret:document.getElementById(key+'_secret')?.value||''};if(key==='amazon'){c.merchantId=document.getElementById('amazon_merchant')?.value||'';}return c;}
+function connectMarket(key){const c=getCreds(key);if(!c.apiKey||!c.apiSecret){toast('Enter API key and secret');return}syncState[key]={connected:true,creds:c,lastSync:null,message:'Credentials saved — click Sync Now'};localStorage.setItem('omniSyncState',JSON.stringify(syncState));addLog(key,'Connected','Credentials saved',0);renderConnectors();syncMarket(key)}
+async function syncMarket(key){
+  const c=(syncState[key]&&syncState[key].creds)||getCreds(key);
+  if(!c.apiKey||!c.apiSecret){toast('Enter credentials first');return}
+  // Orders
+  try{
+    const resp=await fetch(`/api/${key}-orders`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
+    const data=await resp.json();
+    if(!resp.ok)throw new Error((data.error||'Sync failed')+(data.detail?' — '+data.detail:''));
+    if(!Array.isArray(data.orders))throw new Error('Backend returned no "orders" array — redeploy /api/'+key+'-orders');
+    liveOrders=liveOrders.filter(o=>o.marketplace!==key).concat(data.orders.map(o=>({...o,marketplace:key,date:new Date(o.date)})));
+    localStorage.setItem('liveOrders',JSON.stringify(liveOrders));
+    syncState[key]={connected:true,creds:c,lastSync:new Date().toISOString(),message:`Synced ${data.orders.length} orders`};
+    addLog(key,'Success',`Synced ${data.orders.length} orders`,data.orders.length);
+  }catch(e){syncState[key]={...(syncState[key]||{}),connected:true,creds:c,lastSync:new Date().toISOString(),message:String(e.message||e)};addLog(key,'Warning',String(e.message||e),0);}
+  // Products (only where a product endpoint exists, e.g. trendyol-products)
+  try{
+    const presp=await fetch(`/api/${key}-products`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
+    if(presp.ok){const pdata=await presp.json();if(Array.isArray(pdata.products)){liveProducts=liveProducts.filter(p=>p.marketplace!==key).concat(pdata.products.map(p=>({...p,marketplace:key})));localStorage.setItem('liveProducts',JSON.stringify(liveProducts));addLog(key,'Success',`Synced ${pdata.products.length} products`,pdata.products.length);}}
+  }catch(e){/* product endpoint optional per marketplace */}
+  localStorage.setItem('omniSyncState',JSON.stringify(syncState));
+  renderConnectors();applyGlobalFilters();toast(key+' sync complete — check logs');
+}
+function syncAll(){const conn=connectedMarkets();if(!conn.length){toast('Connect a marketplace first');return}Promise.all(conn.map(x=>syncMarket(x.key))).then(()=>toast('Sync All complete'))}
+function disconnectMarket(key){delete syncState[key];liveOrders=liveOrders.filter(o=>o.marketplace!==key);liveProducts=liveProducts.filter(p=>p.marketplace!==key);localStorage.setItem('omniSyncState',JSON.stringify(syncState));localStorage.setItem('liveOrders',JSON.stringify(liveOrders));localStorage.setItem('liveProducts',JSON.stringify(liveProducts));renderConnectors();applyGlobalFilters()}
+
+// ---- Auto-sync every 60s for connected marketplaces (real-time-ish) ----
+setInterval(()=>{const conn=connectedMarkets();if(conn.length)conn.forEach(x=>syncMarket(x.key));},60000);
+
+function addLog(m,s,msg,rows){const logs=JSON.parse(localStorage.getItem('syncLogs')||'[]');logs.unshift({t:new Date().toLocaleString(),m,s,msg,rows});localStorage.setItem('syncLogs',JSON.stringify(logs.slice(0,40)));renderLogs()}
+function renderLogs(){const logs=JSON.parse(localStorage.getItem('syncLogs')||'[]');syncLogRows.innerHTML=logs.map(l=>`<tr><td>${l.t}</td><td>${l.m}</td><td><span class="status ${l.s==='Success'?'':'warn'}">${l.s}</span></td><td>${l.msg}</td><td>${l.rows}</td></tr>`).join('')||'<tr><td colspan="5" class="muted">No sync logs yet.</td></tr>'}
+function clearLogs(){localStorage.removeItem('syncLogs');renderLogs();toast('Logs cleared')}
+
+function openDrawer(t,b){drawerTitle.textContent=t;drawerBody.textContent=b;drawer.classList.add('open')}
+function addNote(){let val=noteText.value.trim();if(!val)return;taskNotes.innerHTML='<div class="note green"><b>New update</b> '+val.replace(/@\w+/g,m=>`<b>${m}</b>`)+'</div>'+taskNotes.innerHTML;noteText.value='';toast('Note added')}
+function toggleProfile(){profileMenu.classList.toggle('open')}
+function showProduct(id,btn){document.querySelectorAll('#products .section').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+function exportCsv(name){const orders=scopedOrders();if(!orders.length){toast('No live data to export');return}const head=['id','marketplace','date','total','status','city'];const rows=orders.map(o=>head.map(h=>`"${(h==='date'?o.date.toISOString():o[h])??''}"`).join(','));const csv=[head.join(','),...rows].join('\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name+'_export.csv';a.click();toast('Export downloaded')}
+
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));document.getElementById(b.dataset.tab).classList.add('active');applyGlobalFilters()});
+globalMarket.onchange=startDate.onchange=endDate.onchange=applyGlobalFilters;
+// sensible default date range: last 30 days
+(function(){const e=new Date(),s=new Date();s.setDate(e.getDate()-30);startDate.value=s.toISOString().slice(0,10);endDate.value=e.toISOString().slice(0,10);})();
+renderConnectors();renderLogs();
+// Auto-sync any already-connected marketplaces on load
+connectedMarkets().forEach(x=>syncMarket(x.key));
+applyGlobalFilters();
+</script>
+</body>
+</html>
